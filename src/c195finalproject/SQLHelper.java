@@ -7,6 +7,7 @@ package c195finalproject;
 import java.sql.*;
 import java.lang.StringBuilder;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import java.time.*;
 /**
  *
  * @author Mesa
@@ -36,7 +37,10 @@ public class SQLHelper{
     }
     
     public static boolean Delete() throws SQLException //delete method for appointments
-    {return false;}
+    {
+        
+        return false;
+    }
     
     public static boolean Update() throws SQLException //update method for appointments
     {return false;}
