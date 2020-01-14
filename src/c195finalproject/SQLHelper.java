@@ -169,7 +169,7 @@ public class SQLHelper{
             if(results.next()) pass.insert(0,results.getString(1));
             return pass;
         }
-        catch(SQLException e)
+        catch(SQLException|NullPointerException e)
         {
             System.out.println(e.getMessage());
         }

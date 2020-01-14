@@ -49,12 +49,13 @@ Tasks:  Log-in form in FX, localize login and error control messages into 2+ lan
 */
 public class C195FinalProject extends Application {
     
+    private Stage mainStage;
     @Override
     public void start(Stage primaryStage) {
         
+        mainStage = primaryStage;
         Scene scene = GetLogin();
-        GetCalendar();
-        primaryStage.setTitle("Hello World!");
+        primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -69,13 +70,20 @@ public class C195FinalProject extends Application {
         Button btnLogin = new Button();        
         Label lblName = new Label("Name:");
         Label lblPass = new Label("Password:");
+        Label loginError = new Label("An error occured with your login.\nTry again or call the help desk at ext#555.");
+        loginError.setVisible(false);        
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
         btnLogin.setText("Login");
         btnLogin.setOnAction(event -> {
             try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString())){
-                   System.out.println("");
+                   Scene loadCal = GetCalendar(txtName.getText());
+                   mainStage.setScene(loadCal);
+                   mainStage.show();
                }
+            else{
+                loginError.setVisible(true);
+            }
             }            
             catch(SQLException|NullPointerException e){e.getMessage();}
             }
@@ -90,12 +98,13 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(lblPass,0,1);
         GridPane.setConstraints(txtName,1,0);
         GridPane.setConstraints(txtPass,1,1);
-        login.getChildren().addAll(btnLogin,lblName,lblPass,txtName,txtPass);
+        GridPane.setConstraints(loginError,0,5,2,4);
+        login.getChildren().addAll(btnLogin,lblName,lblPass,txtName,txtPass,loginError);
         Scene loginScene = new Scene(login,300,250);
         return loginScene;
     }
     
-    public Scene GetCalendar(){
+    public Scene GetCalendar(String curUser){
         BorderPane calPane = new BorderPane();
         
         //top panel creation
@@ -121,8 +130,22 @@ public class C195FinalProject extends Application {
         
         //end right side creation        
         //center panel creation
+        GridPane paneCenter = new GridPane();
+        Label lblCenter = new Label();
+        GridPane.setConstraints(lblCenter,0,8,2,2);
+        paneCenter.getChildren().add(lblCenter);
+        paneCenter.setGridLinesVisible(true);
         Button[] btnMonthArray = new Button[31];
         Button[] btnWeekArray = new Button[7];
+        for(int i = 0; i < btnMonthArray.length;i++)
+        {
+            Button btn = new Button();
+            btn.setText("January " + (i + 1));
+            GridPane.setConstraints(btn, i % 7, i / 7);
+            btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
+            paneCenter.getChildren().add(btn);
+        }
+        
         
         //end center panel creation
         
@@ -131,7 +154,8 @@ public class C195FinalProject extends Application {
         calPane.setLeft(leftSide);
         calPane.setRight(rightSide);
         calPane.setTop(paneTop);
-        Scene calScene = new Scene(calPane);
+        calPane.setCenter(paneCenter);
+        Scene calScene = new Scene(calPane,800,600);
         return calScene;
     }
     
