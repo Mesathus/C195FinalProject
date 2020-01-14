@@ -22,6 +22,14 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.ComboBox;
 import javafx.stage.Stage;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 
 /**
  *
@@ -54,7 +62,8 @@ public class C195FinalProject extends Application {
     public void start(Stage primaryStage) {
         
         mainStage = primaryStage;
-        Scene scene = GetLogin();
+        //Scene scene = GetLogin();
+        Scene scene = GetCalendar("test");
         primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -106,9 +115,11 @@ public class C195FinalProject extends Application {
     
     public Scene GetCalendar(String curUser){
         BorderPane calPane = new BorderPane();
-        
         //top panel creation
         GridPane paneTop = new GridPane();
+        paneTop.setGridLinesVisible(true);
+        paneTop.setHgap(5);
+        paneTop.setPadding(new Insets(5,0,10,5));
         Button btnWeek = new Button();
         Button btnMonth = new Button();
         btnWeek.setText("Week View");
@@ -141,6 +152,7 @@ public class C195FinalProject extends Application {
         {
             Button btn = new Button();
             btn.setText("January " + (i + 1));
+            btn.setMaxWidth(Double.MAX_VALUE);
             GridPane.setConstraints(btn, i % 7, i / 7);
             btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
             paneCenter.getChildren().add(btn);
@@ -148,6 +160,20 @@ public class C195FinalProject extends Application {
         
         
         //end center panel creation
+        //bottom panel creation
+        Label timer = new Label();        
+        GetTime(timer);
+        HBox paneBottom = new HBox();
+        paneBottom.setPadding(new Insets(0,10,0,0));
+        paneBottom.setAlignment(Pos.BASELINE_RIGHT);
+        paneBottom.getChildren().add(timer);
+        try{
+        ScheduledExecutorService startTimer = Executors.newSingleThreadScheduledExecutor();
+        Runnable tskTime = () -> GetTime(timer);
+        startTimer.scheduleAtFixedRate(tskTime, 0, 10, TimeUnit.MILLISECONDS);
+        }
+        catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to run");}
+        //end bottom panel creation
         
         Button insert = new Button();
         Button update = new Button();
@@ -155,6 +181,7 @@ public class C195FinalProject extends Application {
         calPane.setRight(rightSide);
         calPane.setTop(paneTop);
         calPane.setCenter(paneCenter);
+        calPane.setBottom(paneBottom);
         Scene calScene = new Scene(calPane,800,600);
         return calScene;
     }
@@ -166,5 +193,9 @@ public class C195FinalProject extends Application {
         
         Scene apptScene = new Scene(apptPane);
         return apptScene;
+    }
+    public void GetTime(Label timer){        
+        LocalTime time = LocalTime.now(ZoneId.systemDefault());
+        timer.setText(time.toString());       
     }
 }
