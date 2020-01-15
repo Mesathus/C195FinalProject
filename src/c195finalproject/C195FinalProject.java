@@ -25,11 +25,14 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
+import javafx.concurrent.ScheduledService;
+import javafx.concurrent.Task;
+import javafx.util.Duration;
 
 /**
  *
@@ -63,7 +66,7 @@ public class C195FinalProject extends Application {
         
         mainStage = primaryStage;
         //Scene scene = GetLogin();
-        Scene scene = GetCalendar("test");
+        Scene scene = GetLogin();
         primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -76,7 +79,7 @@ public class C195FinalProject extends Application {
         launch(args);
     }
     public Scene GetLogin(){
-        Button btnLogin = new Button();        
+        Button btnLogin = new Button();   
         Label lblName = new Label("Name:");
         Label lblPass = new Label("Password:");
         Label loginError = new Label("An error occured with your login.\nTry again or call the help desk at ext#555.");
@@ -115,31 +118,57 @@ public class C195FinalProject extends Application {
     
     public Scene GetCalendar(String curUser){
         BorderPane calPane = new BorderPane();
-        //top panel creation
+        Label timer = new Label();
+        ScheduledService<Void> startTimer = new ScheduledService<Void>(){
+            @Override
+            protected Task<Void> createTask(){
+            return new Task<Void>()
+                {        
+                @Override
+                protected Void call()
+                {
+                    Platform.runLater(() ->{
+                        LocalTime time = LocalTime.now(ZoneId.systemDefault());
+                        time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT));
+                        timer.setText(time.toString());});            
+                        return null;
+                }
+                };            
+            };
+        };
+        //ScheduledExecutorService startTimer = Executors.newSingleThreadScheduledExecutor();
+        // <editor-fold defaultstate="collapsed" desc="top panel creation">
         GridPane paneTop = new GridPane();
         paneTop.setGridLinesVisible(true);
         paneTop.setHgap(5);
         paneTop.setPadding(new Insets(5,0,10,5));
         Button btnWeek = new Button();
         Button btnMonth = new Button();
+        Button btnExit = new Button();
+        btnExit.setText("Exit");
+        btnExit.setOnAction(event -> {if(!startTimer.isRunning())startTimer.cancel();mainStage.close();});
         btnWeek.setText("Week View");
         btnMonth.setText("Month View");
         GridPane.setConstraints(btnWeek,0,0);
         GridPane.setConstraints(btnMonth,1,0);
-        paneTop.getChildren().addAll(btnWeek,btnMonth);
-        //end top panel creation
-        //left side creation
+        GridPane.setConstraints(btnExit,2,0);
+        paneTop.getChildren().addAll(btnWeek,btnMonth,btnExit);
+        // </editor-fold> end top panel creation
+        
+        // <editor-fold defaultstate="collapsed" desc="left side creation">
         GridPane leftSide = new GridPane();
         leftSide.setGridLinesVisible(true);
         leftSide.setHgap(20);
         leftSide.setVgap(50);
         leftSide.setPadding(new Insets(25,25,25,25));
-        //end left side creation        
-        //right side creation
+        // </editor-fold> end left side creation        
+        
+        // <editor-fold defaultstate="collaped" desc="right side creation">
         ScrollPane rightSide = new ScrollPane();
         rightSide.setVbarPolicy(ScrollBarPolicy.ALWAYS);
         
-        //end right side creation        
+        // </editor-fold>end right side creation    
+        
         //center panel creation
         GridPane paneCenter = new GridPane();
         Label lblCenter = new Label();
@@ -156,21 +185,19 @@ public class C195FinalProject extends Application {
             GridPane.setConstraints(btn, i % 7, i / 7);
             btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
             paneCenter.getChildren().add(btn);
-        }
-        
-        
+        }       
         //end center panel creation
+        
         //bottom panel creation
-        Label timer = new Label();        
-        GetTime(timer);
+              
+        //GetTime(timer);
         HBox paneBottom = new HBox();
         paneBottom.setPadding(new Insets(0,10,0,0));
         paneBottom.setAlignment(Pos.BASELINE_RIGHT);
         paneBottom.getChildren().add(timer);
         try{
-        ScheduledExecutorService startTimer = Executors.newSingleThreadScheduledExecutor();
-        Runnable tskTime = () -> GetTime(timer);
-        startTimer.scheduleAtFixedRate(tskTime, 0, 10, TimeUnit.MILLISECONDS);
+            startTimer.setPeriod(Duration.seconds(.001));
+            startTimer.start();
         }
         catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to run");}
         //end bottom panel creation
@@ -194,8 +221,5 @@ public class C195FinalProject extends Application {
         Scene apptScene = new Scene(apptPane);
         return apptScene;
     }
-    public void GetTime(Label timer){        
-        LocalTime time = LocalTime.now(ZoneId.systemDefault());
-        timer.setText(time.toString());       
-    }
+    
 }
