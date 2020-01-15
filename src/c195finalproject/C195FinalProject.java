@@ -21,18 +21,20 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ComboBox;
 import javafx.stage.Stage;
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
+import java.time.Month;
+import java.time.format.TextStyle;
+import java.util.Locale;
+import javafx.scene.layout.VBox;
 
 /**
  *
@@ -66,7 +68,7 @@ public class C195FinalProject extends Application {
         
         mainStage = primaryStage;
         //Scene scene = GetLogin();
-        Scene scene = GetLogin();
+        Scene scene = GetCalendar("test");
         primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -83,12 +85,12 @@ public class C195FinalProject extends Application {
         Label lblName = new Label("Name:");
         Label lblPass = new Label("Password:");
         Label loginError = new Label("An error occured with your login.\nTry again or call the help desk at ext#555.");
-        loginError.setVisible(false);        
+        loginError.setVisible(false);
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
         btnLogin.setText("Login");
         btnLogin.setOnAction(event -> {
-            try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString())){
+            try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString()) && (txtName.getText().length() > 0)){
                    Scene loadCal = GetCalendar(txtName.getText());
                    mainStage.setScene(loadCal);
                    mainStage.show();
@@ -97,7 +99,7 @@ public class C195FinalProject extends Application {
                 loginError.setVisible(true);
             }
             }            
-            catch(SQLException|NullPointerException e){e.getMessage();}
+            catch(SQLException|NullPointerException e){System.out.println(e.getMessage());}
             }
         );
         GridPane login = new GridPane();
@@ -119,7 +121,8 @@ public class C195FinalProject extends Application {
     public Scene GetCalendar(String curUser){
         BorderPane calPane = new BorderPane();
         Label timer = new Label();
-        ScheduledService<Void> startTimer = new ScheduledService<Void>(){
+        DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("hh:mm:ss a");
+        ScheduledService<Void> startTimer = new ScheduledService<Void>(){            
             @Override
             protected Task<Void> createTask(){
             return new Task<Void>()
@@ -129,14 +132,13 @@ public class C195FinalProject extends Application {
                 {
                     Platform.runLater(() ->{
                         LocalTime time = LocalTime.now(ZoneId.systemDefault());
-                        time.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT));
-                        timer.setText(time.toString());});            
+                        timer.setText(time.format(timeFormat));
+                    });            
                         return null;
                 }
                 };            
             };
         };
-        //ScheduledExecutorService startTimer = Executors.newSingleThreadScheduledExecutor();
         // <editor-fold defaultstate="collapsed" desc="top panel creation">
         GridPane paneTop = new GridPane();
         paneTop.setGridLinesVisible(true);
@@ -146,7 +148,7 @@ public class C195FinalProject extends Application {
         Button btnMonth = new Button();
         Button btnExit = new Button();
         btnExit.setText("Exit");
-        btnExit.setOnAction(event -> {if(!startTimer.isRunning())startTimer.cancel();mainStage.close();});
+        btnExit.setOnAction(event -> {mainStage.close();});
         btnWeek.setText("Week View");
         btnMonth.setText("Month View");
         GridPane.setConstraints(btnWeek,0,0);
@@ -156,11 +158,17 @@ public class C195FinalProject extends Application {
         // </editor-fold> end top panel creation
         
         // <editor-fold defaultstate="collapsed" desc="left side creation">
-        GridPane leftSide = new GridPane();
-        leftSide.setGridLinesVisible(true);
-        leftSide.setHgap(20);
-        leftSide.setVgap(50);
-        leftSide.setPadding(new Insets(25,25,25,25));
+        Button insert = new Button();
+        Button update = new Button();
+        Button delete = new Button();
+        insert.setText("Insert Appointment"); insert.setMaxWidth(Double.MAX_VALUE);
+        update.setText("Update Appointment"); update.setMaxWidth(Double.MAX_VALUE);
+        delete.setText("Delete Appointment"); delete.setMaxWidth(Double.MAX_VALUE);
+        VBox leftSide = new VBox();
+        leftSide.setAlignment(Pos.CENTER_LEFT);
+        leftSide.setSpacing(15);
+        leftSide.setPadding(new Insets(0,0,0,0));
+        leftSide.getChildren().addAll(insert,update,delete);
         // </editor-fold> end left side creation        
         
         // <editor-fold defaultstate="collaped" desc="right side creation">
@@ -172,15 +180,17 @@ public class C195FinalProject extends Application {
         //center panel creation
         GridPane paneCenter = new GridPane();
         Label lblCenter = new Label();
+        Month currMonth = Month.from(LocalDate.now());//from(LocalDate.now());
+        Boolean leapYear = LocalDate.now().getYear()%4 == 0;
         GridPane.setConstraints(lblCenter,0,8,2,2);
         paneCenter.getChildren().add(lblCenter);
         paneCenter.setGridLinesVisible(true);
-        Button[] btnMonthArray = new Button[31];
+        Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
         Button[] btnWeekArray = new Button[7];
         for(int i = 0; i < btnMonthArray.length;i++)
         {
             Button btn = new Button();
-            btn.setText("January " + (i + 1));
+            btn.setText(currMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()) + (i + 1));
             btn.setMaxWidth(Double.MAX_VALUE);
             GridPane.setConstraints(btn, i % 7, i / 7);
             btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
@@ -196,20 +206,19 @@ public class C195FinalProject extends Application {
         paneBottom.setAlignment(Pos.BASELINE_RIGHT);
         paneBottom.getChildren().add(timer);
         try{
-            startTimer.setPeriod(Duration.seconds(.001));
+            startTimer.setPeriod(Duration.seconds(.01));
             startTimer.start();
         }
         catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to run");}
         //end bottom panel creation
         
-        Button insert = new Button();
-        Button update = new Button();
+        
         calPane.setLeft(leftSide);
         calPane.setRight(rightSide);
         calPane.setTop(paneTop);
         calPane.setCenter(paneCenter);
         calPane.setBottom(paneBottom);
-        Scene calScene = new Scene(calPane,800,600);
+        Scene calScene = new Scene(calPane,800,450);
         return calScene;
     }
     
