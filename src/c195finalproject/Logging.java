@@ -6,11 +6,10 @@
 package c195finalproject;
 
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -27,13 +26,15 @@ public class Logging {
     private final static Path BASEDIR = Paths.get(System.getProperty("user.dir"));
     private static Path logDir;
     private final static String OSTYPE = System.getProperty("os.name");
+    private static PrintWriter writer;
     
     public static void Init() throws IOException{
         try{
             logDir = Paths.get(BASEDIR.toString(),"Logs");
             if(!Files.exists(logDir)) Files.createDirectory(logDir);
             logDir = Paths.get(BASEDIR.toString(),"Logs",currDate.toString() + ".txt");
-            if(!Files.exists(logDir)) Files.createFile(logDir);            
+            if(!Files.exists(logDir)) Files.createFile(logDir);
+            writer = new PrintWriter(new BufferedWriter(new FileWriter(logDir.toString(), true)));
         }
         catch(IOException e){     //print a system message if the log file is unavailable
             System.out.println("The user log file was unable to be created");
@@ -41,17 +42,18 @@ public class Logging {
         }
     }
     
-    public static boolean StampLog(String user) throws IOException{
-        logDir = Paths.get(BASEDIR.toString(),"Logs",currDate.toString() + ".txt");
-        try(BufferedWriter writer = Files.newBufferedWriter(logDir)){
+    public static boolean StampLog(String user){
+        try{                
                 currDateTime = LocalDateTime.now(ZoneId.of("UTC"));                
-                writer.append(user + " " + currDateTime.toString() + System.lineSeparator());
-                writer.newLine();
+                writer.write(user + " " + currDateTime.toString() + System.lineSeparator());
                 return true;            
         }
-        catch(IOException e){
+        catch(Exception e){
             System.out.println(e.getMessage());
             return false;
+        }
+        finally{
+            writer.flush();
         }
     }
     

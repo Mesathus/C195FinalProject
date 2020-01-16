@@ -83,6 +83,7 @@ public class SQLHelper{
     private static Connection conn = null;
     private static PreparedStatement prepstatement = null;
     private static ResultSet results = null;
+    private LocalDateTime currDateTime;
     /*
         Inserting appointments requires
     */    

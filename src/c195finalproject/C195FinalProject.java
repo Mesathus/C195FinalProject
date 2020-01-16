@@ -69,8 +69,8 @@ public class C195FinalProject extends Application {
     public void start(Stage primaryStage) {
         
         mainStage = primaryStage;
-        Scene scene = GetLogin();
-        //Scene scene = GetCalendar("test");
+        //Scene scene = GetLogin();
+        Scene scene = GetCalendar("test");
         primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -84,11 +84,12 @@ public class C195FinalProject extends Application {
         catch(IOException e){System.out.println("Unable to log this session.");}
         launch(args);
     }
+    
     public Scene GetLogin(){
         Button btnLogin = new Button();   
         Label lblName = new Label("Name:");
         Label lblPass = new Label("Password:");
-        Label loginError = new Label("An error occured with your login.\nTry again or call the help desk at ext#555.");
+        Label loginError = new Label("An error occured with your login." + System.lineSeparator()  + "Try again or call the help desk at ext#555.");
         loginError.setVisible(false);
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
@@ -104,11 +105,10 @@ public class C195FinalProject extends Application {
                     loginError.setVisible(true);
                 }
             }            
-            catch(SQLException|NullPointerException|IOException e){System.out.println(e.getMessage());}
+            catch(SQLException|NullPointerException e){System.out.println(e.getMessage());}
             }
         );
         GridPane login = new GridPane();
-        //login.setGridLinesVisible(true);
         login.setHgap(3);
         login.setVgap(5);
         login.setPadding(new Insets(25,25,25,25));
@@ -124,8 +124,30 @@ public class C195FinalProject extends Application {
     }
     
     public Scene GetCalendar(String curUser){
-        BorderPane calPane = new BorderPane();
-        Label timer = new Label();
+        
+        // <editor-fold defaultstate="collapsed" desc="variable declarations and tasks">
+        BorderPane calPane = new BorderPane();        
+        GridPane paneTop = new GridPane();
+        VBox leftSide = new VBox();
+        ScrollPane rightSide = new ScrollPane();
+        GridPane paneCenter = new GridPane();
+        HBox paneBottom = new HBox();
+        
+        Month currMonth = Month.from(LocalDate.now());
+        Boolean leapYear = LocalDate.now().getYear()%4 == 0;
+        
+        Button btnWeek = new Button();
+        Button btnMonth = new Button();
+        Button btnExit = new Button();
+        Button btnInsert = new Button();
+        Button btnUpdate = new Button();
+        Button btnDelete = new Button();
+        Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
+        Button[] btnWeekArray = new Button[7];
+        
+        Label lblTimer = new Label();
+        Label lblCenter = new Label();
+        
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("hh:mm:ss a");
         ScheduledService<Void> startTimer = new ScheduledService<Void>(){            
             @Override
@@ -137,21 +159,19 @@ public class C195FinalProject extends Application {
                 {
                     Platform.runLater(() ->{
                         LocalTime time = LocalTime.now(ZoneId.systemDefault());
-                        timer.setText(time.format(timeFormat));
+                        lblTimer.setText(time.format(timeFormat));
                     });            
                         return null;
                 }
                 };            
             };
         };
+        // </editor-fold>
+        
         // <editor-fold defaultstate="collapsed" desc="top panel creation">
-        GridPane paneTop = new GridPane();
         paneTop.setGridLinesVisible(true);
         paneTop.setHgap(5);
         paneTop.setPadding(new Insets(5,0,10,5));
-        Button btnWeek = new Button();
-        Button btnMonth = new Button();
-        Button btnExit = new Button();
         btnExit.setText("Exit");
         btnExit.setOnAction(event -> {mainStage.setScene(GetLogin());mainStage.show();});
         btnWeek.setText("Week View");
@@ -160,38 +180,30 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(btnMonth,1,0);
         GridPane.setConstraints(btnExit,2,0);
         paneTop.getChildren().addAll(btnWeek,btnMonth,btnExit);
-        // </editor-fold> end top panel creation
+        // </editor-fold> 
+        //end top panel creation
         
         // <editor-fold defaultstate="collapsed" desc="left side creation">
-        Button insert = new Button();
-        Button update = new Button();
-        Button delete = new Button();
-        insert.setText("Insert Appointment"); insert.setMaxWidth(Double.MAX_VALUE);
-        update.setText("Update Appointment"); update.setMaxWidth(Double.MAX_VALUE);
-        delete.setText("Delete Appointment"); delete.setMaxWidth(Double.MAX_VALUE);
-        VBox leftSide = new VBox();
+        btnInsert.setText("Insert Appointment"); btnInsert.setMaxWidth(Double.MAX_VALUE);
+        btnUpdate.setText("Update Appointment"); btnUpdate.setMaxWidth(Double.MAX_VALUE);
+        btnDelete.setText("Delete Appointment"); btnDelete.setMaxWidth(Double.MAX_VALUE);
         leftSide.setAlignment(Pos.CENTER_LEFT);
         leftSide.setSpacing(15);
         leftSide.setPadding(new Insets(0,0,0,0));
-        leftSide.getChildren().addAll(insert,update,delete);
-        // </editor-fold> end left side creation        
+        leftSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
+        // </editor-fold> 
+        //end left side creation        
         
         // <editor-fold defaultstate="collaped" desc="right side creation">
-        ScrollPane rightSide = new ScrollPane();
         rightSide.setVbarPolicy(ScrollBarPolicy.ALWAYS);
         
-        // </editor-fold>end right side creation    
+        // </editor-fold>
+        //end right side creation    
         
-        //center panel creation
-        GridPane paneCenter = new GridPane();
-        Label lblCenter = new Label();
-        Month currMonth = Month.from(LocalDate.now());//from(LocalDate.now());
-        Boolean leapYear = LocalDate.now().getYear()%4 == 0;
+        // <editor-fold defaultstate="collapsed" desc="center panel creation">
         GridPane.setConstraints(lblCenter,0,8,2,2);
         paneCenter.getChildren().add(lblCenter);
         paneCenter.setGridLinesVisible(true);
-        Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
-        Button[] btnWeekArray = new Button[7];
         for(int i = 0; i < btnMonthArray.length;i++)
         {
             Button btn = new Button();
@@ -201,20 +213,21 @@ public class C195FinalProject extends Application {
             btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
             paneCenter.getChildren().add(btn);
         }       
+        // </editor-fold> 
         //end center panel creation
         
-        //bottom panel creation
+        // <editor-fold defaultstate="collapsed" desc="bottom panel creation">
               
         //GetTime(timer);
-        HBox paneBottom = new HBox();
         paneBottom.setPadding(new Insets(0,10,0,0));
         paneBottom.setAlignment(Pos.BASELINE_RIGHT);
-        paneBottom.getChildren().add(timer);
+        paneBottom.getChildren().add(lblTimer);
         try{
             startTimer.setPeriod(Duration.seconds(.01));
             startTimer.start();
         }
         catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to run");}
+        // </editor-fold>
         //end bottom panel creation
         
         
@@ -234,6 +247,12 @@ public class C195FinalProject extends Application {
         
         Scene apptScene = new Scene(apptPane);
         return apptScene;
+    }
+    
+    public Scene GetCustomers(){
+        BorderPane custPane = new BorderPane();
+        Scene custScene = new Scene(custPane,800,600);
+        return custScene;
     }
     
 }
