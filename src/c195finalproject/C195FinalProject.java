@@ -5,6 +5,8 @@
  */
 package c195finalproject;
 
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import java.sql.SQLException;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -67,8 +69,8 @@ public class C195FinalProject extends Application {
     public void start(Stage primaryStage) {
         
         mainStage = primaryStage;
-        //Scene scene = GetLogin();
-        Scene scene = GetCalendar("test");
+        Scene scene = GetLogin();
+        //Scene scene = GetCalendar("test");
         primaryStage.setTitle("C195 Inc. Login");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -78,6 +80,8 @@ public class C195FinalProject extends Application {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        try{Logging.Init();}
+        catch(IOException e){System.out.println("Unable to log this session.");}
         launch(args);
     }
     public Scene GetLogin(){
@@ -91,15 +95,16 @@ public class C195FinalProject extends Application {
         btnLogin.setText("Login");
         btnLogin.setOnAction(event -> {
             try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString()) && (txtName.getText().length() > 0)){
+                   Logging.StampLog(txtName.getText());
                    Scene loadCal = GetCalendar(txtName.getText());
                    mainStage.setScene(loadCal);
                    mainStage.show();
                }
-            else{
-                loginError.setVisible(true);
-            }
+                else{
+                    loginError.setVisible(true);
+                }
             }            
-            catch(SQLException|NullPointerException e){System.out.println(e.getMessage());}
+            catch(SQLException|NullPointerException|IOException e){System.out.println(e.getMessage());}
             }
         );
         GridPane login = new GridPane();
@@ -148,7 +153,7 @@ public class C195FinalProject extends Application {
         Button btnMonth = new Button();
         Button btnExit = new Button();
         btnExit.setText("Exit");
-        btnExit.setOnAction(event -> {mainStage.close();});
+        btnExit.setOnAction(event -> {mainStage.setScene(GetLogin());mainStage.show();});
         btnWeek.setText("Week View");
         btnMonth.setText("Month View");
         GridPane.setConstraints(btnWeek,0,0);
