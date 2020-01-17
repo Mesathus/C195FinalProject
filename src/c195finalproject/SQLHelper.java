@@ -5,7 +5,6 @@
  */
 package c195finalproject;
 import java.sql.*;
-import java.lang.StringBuilder;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import java.time.*;
 /**
@@ -98,14 +97,14 @@ public class SQLHelper{
             results = prepstatement.executeQuery();
             if(results == null) throw new NullPointerException();
             int userID = 0, custID = 0;
-            if(results.next()) userID = results.getInt(1);
             if(results.next()) custID = results.getInt(1);
+            if(results.next()) userID = results.getInt(1);
             results = null;            
             prepstatement = conn.prepareStatement("INSERT INTO appointment (appointmentId, customerId, userId, "
                     + "title, description, location, contact, type, url, start, end, createDate, createdBy, lastUpdate, lastUpdateBy) "
                     + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-            prepstatement.setInt(2,userID);
-            prepstatement.setInt(3,custID);
+            prepstatement.setInt(2,custID);
+            prepstatement.setInt(3,userID);
             prepstatement.setString(4,title);
             prepstatement.setString(5,description);
             prepstatement.setString(6,location);
@@ -114,6 +113,10 @@ public class SQLHelper{
             prepstatement.setString(9,url);
             prepstatement.setTimestamp(10, start);
             prepstatement.setTimestamp(11,end);
+            prepstatement.setTimestamp(12, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
+            prepstatement.setString(13, userName);                                      //on Insert, create == update, this value not to be changed in Update function
+            prepstatement.setTimestamp(14, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
+            prepstatement.setString(15, userName);                                      //on Insert, create == update
             prepstatement.executeUpdate();
             //add appointmentId(PK), customerId, userId, createDate, createdBy, lastUpdate, lastUpdateBy
             return true;
@@ -124,7 +127,7 @@ public class SQLHelper{
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
-            System.out.println("User/Customer ID lookup returned a null result set.");
+            System.out.println("User/Customer ID lookup returned an empty result set.");
             return false;
         }
         finally{
@@ -150,12 +153,30 @@ public class SQLHelper{
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("INSERT INTO ");
         }
-        catch(Exception e){}
+        catch(SQLException e){}
         finally{}
         
         return false;
     }
     
+    
+    public static void GetAppointments(String user) throws SQLException
+    {
+        try{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("SELECT appointment.* , customer.customerName , address.phone "
+                    + "FROM "
+                    + "WHERE  ");
+        }
+        catch(SQLException e){}
+        finally{}
+    }
+    
+    public static void GetCustomers()
+    {
+        
+    }
     
     public static StringBuilder GetPass(String inputName) throws SQLException
     {
@@ -201,4 +222,14 @@ public class SQLHelper{
         return myDS;
     }    
 }    */
+    
+    /* Code for comparing Int values in streams
+        Iterator<Integer> i1 = num.iterator();
+        Iterator<Integer> i2 = infinite.iterator();        
+        while(i1.hasNext()){
+            Integer num1 = i1.next();
+            Integer num2 = i2.next();
+            if(!num1.equals(num2)){System.out.println(num2);break;}
+        }
+     */
 }

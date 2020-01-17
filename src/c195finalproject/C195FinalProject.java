@@ -65,9 +65,9 @@ Tasks:  Log-in form in FX, localize login and error control messages into 2+ lan
 public class C195FinalProject extends Application {
     
     private Stage mainStage;
+    private Stage altStage;
     @Override
     public void start(Stage primaryStage) {
-        
         mainStage = primaryStage;
         //Scene scene = GetLogin();
         Scene scene = GetCalendar("test");
@@ -130,7 +130,8 @@ public class C195FinalProject extends Application {
         GridPane paneTop = new GridPane();
         VBox leftSide = new VBox();
         ScrollPane rightSide = new ScrollPane();
-        GridPane paneCenter = new GridPane();
+        GridPane paneCenterWeek = new GridPane();
+        GridPane paneCenterMonth = new GridPane();
         HBox paneBottom = new HBox();
         
         Month currMonth = Month.from(LocalDate.now());
@@ -146,7 +147,8 @@ public class C195FinalProject extends Application {
         Button[] btnWeekArray = new Button[7];
         
         Label lblTimer = new Label();
-        Label lblCenter = new Label();
+        Label lblCenterMonth = new Label();
+        Label lblCenterWeek = new Label();
         
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("hh:mm:ss a");
         ScheduledService<Void> startTimer = new ScheduledService<Void>(){            
@@ -201,18 +203,32 @@ public class C195FinalProject extends Application {
         //end right side creation    
         
         // <editor-fold defaultstate="collapsed" desc="center panel creation">
-        GridPane.setConstraints(lblCenter,0,8,2,2);
-        paneCenter.getChildren().add(lblCenter);
-        paneCenter.setGridLinesVisible(true);
+        GridPane.setConstraints(lblCenterMonth,0,8,2,2);
+        paneCenterMonth.getChildren().add(lblCenterMonth);
+        paneCenterMonth.setGridLinesVisible(true);
+        GridPane.setConstraints(lblCenterWeek,0,2,2,2);
+        paneCenterWeek.getChildren().add(lblCenterWeek);
+        paneCenterWeek.setGridLinesVisible(true);        
         for(int i = 0; i < btnMonthArray.length;i++)
         {
             Button btn = new Button();
             btn.setText(currMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()) + (i + 1));
             btn.setMaxWidth(Double.MAX_VALUE);
             GridPane.setConstraints(btn, i % 7, i / 7);
-            btn.setOnAction(event ->{lblCenter.setText(btn.getText());});
-            paneCenter.getChildren().add(btn);
-        }       
+            btn.setOnAction(event ->{lblCenterMonth.setText(btn.getText());});
+            paneCenterMonth.getChildren().add(btn);
+        }
+        for(int i = 0; i < btnWeekArray.length; i++)
+        {
+            Button btn = new Button();
+            btn.setText(LocalDate.now(ZoneId.systemDefault()).plusDays(i).toString());
+            btn.setMaxWidth(Double.MAX_VALUE);
+            GridPane.setConstraints(btn, i, 0);
+            btn.setOnAction(event -> {lblCenterWeek.setText(btn.getText());});
+            paneCenterWeek.getChildren().add(btn);
+        }
+        btnMonth.setOnAction(event -> {calPane.setCenter(paneCenterMonth);});
+        btnWeek.setOnAction(event -> {calPane.setCenter(paneCenterWeek);});
         // </editor-fold> 
         //end center panel creation
         
@@ -234,7 +250,7 @@ public class C195FinalProject extends Application {
         calPane.setLeft(leftSide);
         calPane.setRight(rightSide);
         calPane.setTop(paneTop);
-        calPane.setCenter(paneCenter);
+        calPane.setCenter(paneCenterWeek);
         calPane.setBottom(paneBottom);
         Scene calScene = new Scene(calPane,800,450);
         return calScene;

@@ -25,7 +25,7 @@ public class Logging {
     private static LocalDateTime currDateTime;
     private final static Path BASEDIR = Paths.get(System.getProperty("user.dir"));
     private static Path logDir;
-    private final static String OSTYPE = System.getProperty("os.name");
+    //private final static String OSTYPE = System.getProperty("os.name");
     private static PrintWriter writer;
     
     public static void Init() throws IOException{
