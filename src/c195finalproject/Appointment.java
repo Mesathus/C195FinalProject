@@ -5,10 +5,40 @@
  */
 package c195finalproject;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 /**
  *
  * @author Mesa
  */
-public class Appointment {
+public class Appointment implements Comparable<Appointment>{
+    
+    private Integer apptId;
+    private String custFirstName;
+    private String custLastName;
+    private String title;
+    private String description;
+    private String location;
+    private String contact;
+    private String type;
+    private String url;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private LocalDateTime apptTime;
+    
+    public Appointment(){
+        
+    }
+    
+    @Override
+    public int compareTo(Appointment appt){
+        return this.startTime.compareTo(appt.startTime);
+    }
+    @Override
+    public String toString(){
+        return title;
+    }
+    
+    
     
 }

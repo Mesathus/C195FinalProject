@@ -7,6 +7,7 @@ package c195finalproject;
 import java.sql.*;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import java.time.*;
+import java.util.HashMap;
 /**
  *
  * @author Mesa
@@ -83,6 +84,7 @@ public class SQLHelper{
     private static PreparedStatement prepstatement = null;
     private static ResultSet results = null;
     private LocalDateTime currDateTime;
+    private HashMap<Integer,Object> map = null;
     /*
         Inserting appointments requires
     */    
@@ -170,10 +172,14 @@ public class SQLHelper{
                     + "WHERE  ");
         }
         catch(SQLException e){}
-        finally{}
+        finally{           
+            prepstatement = null;
+            conn = null;
+            ds = null;
+        }
     }
     
-    public static void GetCustomers()
+    public static void GetCustomers() throws SQLException
     {
         
     }
