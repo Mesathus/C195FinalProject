@@ -43,7 +43,9 @@ public class Logging {
     }
     
     public static boolean StampLog(String user){
-        try{                
+        try{            
+                currDate = LocalDate.now(ZoneId.of("UTC"));
+                Init();
                 currDateTime = LocalDateTime.now(ZoneId.of("UTC"));                
                 writer.write(user + " " + currDateTime.toString() + System.lineSeparator());
                 return true;            

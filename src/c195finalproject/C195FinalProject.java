@@ -35,8 +35,11 @@ import javafx.concurrent.Task;
 import javafx.util.Duration;
 import java.time.Month;
 import java.time.format.TextStyle;
+import java.util.Collection;
 import java.util.Locale;
+import java.util.TreeMap;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.TextFlow;
 
 /**
  *
@@ -198,7 +201,16 @@ public class C195FinalProject extends Application {
         
         // <editor-fold defaultstate="collaped" desc="right side creation">
         rightSide.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-        
+        try{
+            TreeMap<Integer,Appointment> apptMap = SQLHelper.GetAppointments(curUser);
+            TextFlow rightText = new TextFlow();
+            Collection<Appointment> values = apptMap.values();
+            values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});
+            rightSide.setContent(rightText);
+        }
+        catch(SQLException|NullPointerException e){
+            System.out.println("Error retrieving appointments||Null value returned");
+        }
         // </editor-fold>
         //end right side creation    
         
@@ -256,16 +268,20 @@ public class C195FinalProject extends Application {
         return calScene;
     }
     
-    public Scene GetAppointments(){
+    public Scene GetAppointments(String curUser) throws SQLException{
         BorderPane apptPane = new BorderPane();
         ComboBox apptCBox = new ComboBox();
-        
-        
+        try{
+            TreeMap<Integer,Object> apptMap = SQLHelper.GetAppointments(curUser);            
+        }
+        catch(SQLException e){
+            
+        }
         Scene apptScene = new Scene(apptPane);
         return apptScene;
     }
     
-    public Scene GetCustomers(){
+    public Scene GetCustomers(String curUser){
         BorderPane custPane = new BorderPane();
         Scene custScene = new Scene(custPane,800,600);
         return custScene;

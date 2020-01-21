@@ -43,7 +43,9 @@ public abstract class Customer implements Comparable<Customer>{
     public String toString(){
         return this.custLastName + ", " + this.custFirstName;
     }
-    
+    public Integer getID(){
+        return custID;
+    }
     
     
 }

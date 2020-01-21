@@ -5,9 +5,8 @@
  */
 package c195finalproject;
 import java.sql.*;
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import java.time.*;
-import java.util.HashMap;
+import java.util.TreeMap;
 /**
  *
  * @author Mesa
@@ -84,7 +83,7 @@ public class SQLHelper{
     private static PreparedStatement prepstatement = null;
     private static ResultSet results = null;
     private LocalDateTime currDateTime;
-    private HashMap<Integer,Object> map = null;
+    private static TreeMap<Integer,Object> map = null;
     /*
         Inserting appointments requires
     */    
@@ -162,17 +161,28 @@ public class SQLHelper{
     }
     
     
-    public static void GetAppointments(String user) throws SQLException
+    public static TreeMap GetAppointments(String user) throws SQLException
     {
         try{
+            map = new TreeMap<>();
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("SELECT appointment.* , customer.customerName , address.phone "
+            prepstatement = conn.prepareStatement("SELECT appointment.* , customer.customerName , address.phone "  //don't need * from appointments
                     + "FROM "
-                    + "WHERE  ");
+                    + "WHERE userId = (SELECT userId FROM user WHERE userName LIKE ?;);");
+            results = prepstatement.executeQuery();
+            prepstatement.setString(1,user);
+            while(results.next()){
+                Appointment appt = new Appointment(results.getInt("userId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
+                        results.getString("location"), results.getString("contact"),results.getString("url"),
+                        results.getTimestamp("start").toLocalDateTime(),results.getTimestamp("end").toLocalDateTime());
+                map.put(appt.getID(),appt);
+            }
+            return map;
         }
-        catch(SQLException e){}
-        finally{           
+        catch(SQLException e){return null;}
+        finally{
+            results = null;
             prepstatement = null;
             conn = null;
             ds = null;
@@ -181,7 +191,15 @@ public class SQLHelper{
     
     public static void GetCustomers() throws SQLException
     {
-        
+        try{
+            map = new TreeMap<>();
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            
+        }
+        catch(NullPointerException e){
+            System.out.println(e.getMessage());
+        }
     }
     
     public static StringBuilder GetPass(String inputName) throws SQLException
