@@ -9,7 +9,7 @@ package c195finalproject;
  *
  * @author Mesa
  */
-public abstract class Customer implements Comparable<Customer>{
+public class Customer implements Comparable<Customer>{
     private Integer custID;
     private String custFirstName;
     private String custLastName;

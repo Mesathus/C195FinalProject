@@ -201,10 +201,15 @@ public class C195FinalProject extends Application {
         
         // <editor-fold defaultstate="collaped" desc="right side creation">
         rightSide.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+        rightSide.setPrefWidth(80);
         try{
-            TreeMap<Integer,Appointment> apptMap = SQLHelper.GetAppointments(curUser);
+           /* TreeMap<Integer,Appointment> apptMap = SQLHelper.GetAppointments(curUser);
             TextFlow rightText = new TextFlow();
             Collection<Appointment> values = apptMap.values();
+            values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});*/
+            TreeMap<Integer,Customer> apptMap = SQLHelper.GetCustomers();
+            TextFlow rightText = new TextFlow();
+            Collection<Customer> values = apptMap.values();
             values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});
             rightSide.setContent(rightText);
         }

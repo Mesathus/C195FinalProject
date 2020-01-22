@@ -87,6 +87,7 @@ public class SQLHelper{
     /*
         Inserting appointments requires
     */    
+    // <editor-fold defaultstate="collapsed" desc="Appointment methods">
     public static boolean Insert(String userName, String custName,String title, String description, String location, String contact, String type, String url, Timestamp start, Timestamp end) throws SQLException //insert method for appointments
     {
         try{            
@@ -146,8 +147,9 @@ public class SQLHelper{
     
     public static boolean Update() throws SQLException //update method for appointments
     {return false;}
+    // </editor-fold>
     
-    //Methods for new customers
+    // <editor-fold defaultstate="collapsed" desc="Customer methods">
     public static boolean Insert(String name, Boolean active, String address1, String address2, String postalCode, String phone, String city, String country) throws SQLException{
         try{
             ds = DataSource.getInstance();
@@ -160,6 +162,8 @@ public class SQLHelper{
         return false;
     }
     
+    // </editor-fold>
+    
     
     public static TreeMap GetAppointments(String user) throws SQLException
     {
@@ -169,9 +173,9 @@ public class SQLHelper{
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("SELECT appointment.* , customer.customerName , address.phone "  //don't need * from appointments
                     + "FROM "
-                    + "WHERE userId = (SELECT userId FROM user WHERE userName LIKE ?;);");
-            results = prepstatement.executeQuery();
+                    + "WHERE userId = (SELECT userId FROM user WHERE userName LIKE ?;);");            
             prepstatement.setString(1,user);
+            results = prepstatement.executeQuery();
             while(results.next()){
                 Appointment appt = new Appointment(results.getInt("userId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
                         results.getString("location"), results.getString("contact"),results.getString("url"),
@@ -180,8 +184,9 @@ public class SQLHelper{
             }
             return map;
         }
-        catch(SQLException e){return null;}
+        catch(SQLException e){System.out.println(e.getMessage());return null;}
         finally{
+            map = null;
             results = null;
             prepstatement = null;
             conn = null;
@@ -189,16 +194,37 @@ public class SQLHelper{
         }
     }
     
-    public static void GetCustomers() throws SQLException
+    public static TreeMap GetCustomers() throws SQLException
     {
         try{
             map = new TreeMap<>();
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            
+            prepstatement = conn.prepareStatement("SELECT customer.*, address.*, city.city, country.country"
+                    + " FROM customer INNER JOIN "
+                    + "(address INNER JOIN "
+                    + "(city INNER JOIN country ON city.countryId = country.countryId) "
+                    + "ON address.cityId = city.cityId)"
+                    + "ON customer.addressId = address.addressId;");
+            results = prepstatement.executeQuery();
+            while(results.next()){
+                //int custID, String custName, String add1, String add2, String postCode, String phone, String city, String country
+                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getString("address"),results.getString("address2"),results.getString("postalCode"),
+                results.getString("phone"),results.getString("city"),results.getString("country"));
+                map.put(cust.getID(), cust);
+            }
+            return map;
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
+            return null;
+        }
+        finally{
+            map = null;
+            results = null;
+            prepstatement = null;
+            conn = null;
+            ds = null;
         }
     }
     
