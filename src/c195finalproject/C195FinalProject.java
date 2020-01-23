@@ -6,11 +6,8 @@
 package c195finalproject;
 
 import java.io.IOException;
-import java.nio.file.NoSuchFileException;
 import java.sql.SQLException;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -40,6 +37,7 @@ import java.util.Locale;
 import java.util.TreeMap;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
+
 
 /**
  *
@@ -92,7 +90,7 @@ public class C195FinalProject extends Application {
         Button btnLogin = new Button();   
         Label lblName = new Label("Name:");
         Label lblPass = new Label("Password:");
-        Label loginError = new Label("An error occured with your login." + System.lineSeparator()  + "Try again or call the help desk at ext#555.");
+        Label loginError = new Label("An error occured with your login." + System.lineSeparator() + "Try again or call the help desk at ext#555.");
         loginError.setVisible(false);
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
@@ -166,7 +164,7 @@ public class C195FinalProject extends Application {
                         LocalTime time = LocalTime.now(ZoneId.systemDefault());
                         lblTimer.setText(time.format(timeFormat));
                     });            
-                        return null;
+                    return null;
                 }
                 };            
             };

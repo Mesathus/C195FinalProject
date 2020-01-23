@@ -55,7 +55,5 @@ public class Appointment implements Comparable<Appointment>{
     }
     public Integer getID(){
         return this.apptId;
-    }
-    
-    
+    }    
 }

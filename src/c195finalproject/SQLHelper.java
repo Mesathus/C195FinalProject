@@ -171,9 +171,11 @@ public class SQLHelper{
             map = new TreeMap<>();
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("SELECT appointment.* , customer.customerName , address.phone "  //don't need * from appointments
-                    + "FROM "
-                    + "WHERE userId = (SELECT userId FROM user WHERE userName LIKE ?;);");            
+            prepstatement = conn.prepareStatement("SELECT appointment.*, customer.customerName, address.phone "
+                    + "FROM appointment INNER JOIN "
+                    + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
+                    + "ON appointment.customerId = customer.customerId "
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?;);");            
             prepstatement.setString(1,user);
             results = prepstatement.executeQuery();
             while(results.next()){
