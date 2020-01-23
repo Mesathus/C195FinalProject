@@ -175,7 +175,7 @@ public class SQLHelper{
                     + "FROM appointment INNER JOIN "
                     + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
                     + "ON appointment.customerId = customer.customerId "
-                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?;);");            
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?;);");
             prepstatement.setString(1,user);
             results = prepstatement.executeQuery();
             while(results.next()){
@@ -251,6 +251,7 @@ public class SQLHelper{
             if(results != null) results.close();
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
+            pass = null;
         }
         return pass;
     }

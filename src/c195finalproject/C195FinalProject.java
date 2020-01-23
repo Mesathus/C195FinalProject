@@ -34,6 +34,7 @@ import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.TreeMap;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
@@ -66,7 +67,10 @@ Tasks:  Log-in form in FX, localize login and error control messages into 2+ lan
 public class C195FinalProject extends Application {
     
     private Stage mainStage;
-    private Stage altStage;
+    private Stage altStage;    
+    private static final Locale myLocale = Locale.getDefault();
+    private static final ResourceBundle rb = ResourceBundle.getBundle("c195finalproject/C195properties",myLocale);
+    
     @Override
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
@@ -87,11 +91,12 @@ public class C195FinalProject extends Application {
     }
     
     public Scene GetLogin(){
-        Button btnLogin = new Button();   
-        Label lblName = new Label("Name:");
-        Label lblPass = new Label("Password:");
-        Label loginError = new Label("An error occured with your login." + System.lineSeparator() + "Try again or call the help desk at ext#555.");
+        Button btnLogin = new Button();        
+        Label lblName = new Label(rb.getString("username") + ":");
+        Label lblPass = new Label(rb.getString("userpass") + ":");
+        Label loginError = new Label(rb.getString("loginError") + System.lineSeparator() + rb.getString("helpDesk"));
         loginError.setVisible(false);
+        loginError.setWrapText(true);
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
         btnLogin.setText("Login");
@@ -275,7 +280,7 @@ public class C195FinalProject extends Application {
         BorderPane apptPane = new BorderPane();
         ComboBox apptCBox = new ComboBox();
         try{
-            TreeMap<Integer,Object> apptMap = SQLHelper.GetAppointments(curUser);            
+            TreeMap<Integer,Object> apptMap = SQLHelper.GetAppointments(curUser);
         }
         catch(SQLException e){
             
