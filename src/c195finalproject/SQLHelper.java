@@ -133,8 +133,8 @@ public class SQLHelper{
             return false;
         }
         finally{
-            prepstatement = null;
-            conn = null;
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
             ds = null;
         }
     }  
@@ -150,14 +150,34 @@ public class SQLHelper{
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc="Customer methods">
-    public static boolean Insert(String name, Boolean active, String address1, String address2, String postalCode, String phone, String city, String country) throws SQLException{
+    public static boolean Insert(Customer cust, String user) throws SQLException{
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("INSERT INTO ");
+            prepstatement = conn.prepareStatement("INSERT INTO customer "
+                    + "(customerId,customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
+                    + "(?,?,?,?,?,?,?,?);");
+            prepstatement.setString(2,cust.getName());
+            prepstatement.setBoolean(4, cust.getActive());
+            prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(6, user);
+            prepstatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(8, user);
+            prepstatement.execute();
+            prepstatement = conn.prepareStatement("INSERT INTO address "
+                    + "(address, address2, postalCode, phone) VALUES (?,?,?,?)");
+            prepstatement.setString(1, cust.getAddr()[0]);
+            prepstatement.setString(2, cust.getAddr()[1]);
+            prepstatement.setString(3, cust.getZip());
+            prepstatement.setString(4, cust.getPhone());
+            prepstatement.execute();
+            prepstatement = conn.prepareStatement("INSERT INTO city ");
         }
-        catch(SQLException e){}
-        finally{}
+        catch(SQLException e){System.out.println(e.getMessage());}
+        finally{            
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+        }
         
         return false;
     }
@@ -189,9 +209,9 @@ public class SQLHelper{
         catch(SQLException e){System.out.println(e.getMessage());return null;}
         finally{
             map = null;
-            results = null;
-            prepstatement = null;
-            conn = null;
+            if(results != null) results.close();
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
             ds = null;
         }
     }
@@ -211,7 +231,7 @@ public class SQLHelper{
             results = prepstatement.executeQuery();
             while(results.next()){
                 //int custID, String custName, String add1, String add2, String postCode, String phone, String city, String country
-                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getString("address"),results.getString("address2"),results.getString("postalCode"),
+                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getBoolean("active"),results.getString("address"),results.getString("address2"),results.getString("postalCode"),
                 results.getString("phone"),results.getString("city"),results.getString("country"));
                 map.put(cust.getID(), cust);
             }
@@ -223,9 +243,9 @@ public class SQLHelper{
         }
         finally{
             map = null;
-            results = null;
-            prepstatement = null;
-            conn = null;
+            if(results != null) results.close();
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
             ds = null;
         }
     }

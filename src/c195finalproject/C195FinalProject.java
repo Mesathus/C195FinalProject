@@ -68,8 +68,8 @@ public class C195FinalProject extends Application {
     
     private Stage mainStage;
     private Stage altStage;    
-    private static final Locale myLocale = Locale.getDefault();
-    private static final ResourceBundle rb = ResourceBundle.getBundle("c195finalproject/C195properties",myLocale);
+    private static final Locale MYLOCALE = Locale.getDefault();
+    private static final ResourceBundle RB = ResourceBundle.getBundle("c195finalproject/C195properties",MYLOCALE);
     
     @Override
     public void start(Stage primaryStage) {
@@ -86,16 +86,15 @@ public class C195FinalProject extends Application {
      */
     public static void main(String[] args) {
         try{Logging.Init();}
-        catch(IOException e){System.out.println("Unable to log this session.");}
-        
+        catch(IOException e){System.out.println("Unable to log this session.");}        
         launch(args);
     }
     
     public Scene GetLogin(){
         Button btnLogin = new Button();        
-        Label lblName = new Label(rb.getString("username") + ":");
-        Label lblPass = new Label(rb.getString("userpass") + ":");
-        Label loginError = new Label(rb.getString("loginError") + System.lineSeparator() + rb.getString("helpDesk"));
+        Label lblName = new Label(RB.getString("username") + ":");
+        Label lblPass = new Label(RB.getString("userpass") + ":");
+        Label loginError = new Label(RB.getString("loginError") + System.lineSeparator() + RB.getString("helpDesk"));
         loginError.setVisible(false);
         loginError.setWrapText(true);
         TextField txtName = new TextField();
