@@ -87,6 +87,7 @@ public class C195FinalProject extends Application {
     public static void main(String[] args) {
         try{Logging.Init();}
         catch(IOException e){System.out.println("Unable to log this session.");}
+        
         launch(args);
     }
     
