@@ -10,7 +10,7 @@ package c195finalproject;
  * @author Mesa
  */
 public class Customer implements Comparable<Customer>{
-    private Integer custID;
+    private Integer custID = null;
     private String custName;
     private String custFirstName;
     private String custLastName;
@@ -25,7 +25,6 @@ public class Customer implements Comparable<Customer>{
     public Customer(int custID, String custName, Boolean active,String add1, String add2, String postCode, String phone, String city, String country){
         try{
             this.custID = custID;
-            this.custName = custName;
             String[] arrName = custName.split(" ");
             this.custFirstName = arrName[0];
             this.custLastName = arrName[1];

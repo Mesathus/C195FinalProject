@@ -13,7 +13,7 @@ import java.time.LocalTime;
  */
 public class Appointment implements Comparable<Appointment>{
     
-    private Integer apptId;
+    private Integer apptId = null;
     private String custFirstName;
     private String custLastName;
     private String title;
@@ -53,7 +53,17 @@ public class Appointment implements Comparable<Appointment>{
     public String toString(){
         return title;
     }
-    public Integer getID(){
-        return this.apptId;
-    }    
+    
+    // <editor-fold defaultstate="collapsed" desc="Getters">
+    public Integer getID(){return this.apptId;}
+    public String getName(){return custFirstName + " " + custLastName;}
+    public String getTitle(){return title;}
+    public String getDesc(){return description;}
+    public String getLoc(){return location;}
+    public String getContact(){return contact;}
+    public String getType(){return type;}
+    public String getURL(){return url;}
+    public LocalDateTime getStart(){return startTime;}
+    public LocalDateTime getEnd(){return endTime;}
+    // </editor-fold>
 }

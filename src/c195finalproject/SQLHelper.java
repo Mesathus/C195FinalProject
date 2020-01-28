@@ -102,9 +102,9 @@ public class SQLHelper{
             if(results.next()) custID = results.getInt(1);
             if(results.next()) userID = results.getInt(1);
             results = null;            
-            prepstatement = conn.prepareStatement("INSERT INTO appointment (appointmentId, customerId, userId, "
+            prepstatement = conn.prepareStatement("INSERT INTO appointment (customerId, userId, "
                     + "title, description, location, contact, type, url, start, end, createDate, createdBy, lastUpdate, lastUpdateBy) "
-                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             prepstatement.setInt(2,custID);
             prepstatement.setInt(3,userID);
             prepstatement.setString(4,title);
@@ -139,14 +139,37 @@ public class SQLHelper{
         }
     }  
     
-    public static boolean Delete() throws SQLException //delete method for appointments
+    public static boolean Delete(Appointment appt) throws SQLException //delete method for appointments
     {
-        
-        return false;
+        try{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("DELETE FROM appointment WHERE appointmentId = ?;");
+            prepstatement.setInt(1, appt.getID());
+            prepstatement.execute();
+            return true;
+        }
+        catch(SQLException e){
+            return false;
+        }
     }
     
-    public static boolean Update() throws SQLException //update method for appointments
-    {return false;}
+    public static boolean Update(Appointment appt) throws SQLException //update method for appointments
+    {
+        try{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("UPDATE appointment "
+                    + "SET customerName = ?, "
+                    + "WHERE appointmentId = ?;");
+            prepstatement.setInt(1, appt.getID());
+            prepstatement.executeUpdate();
+            return true;
+        }
+        catch(SQLException e){
+            return false;
+        }
+    }
     // </editor-fold>
     
     // <editor-fold defaultstate="collapsed" desc="Customer methods">
@@ -155,8 +178,8 @@ public class SQLHelper{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("INSERT INTO customer "
-                    + "(customerId,customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                    + "(?,?,?,?,?,?,?,?);");
+                    + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
+                    + "(?,?,?,?,?,?,?);");
             prepstatement.setString(2,cust.getName());
             prepstatement.setBoolean(4, cust.getActive());
             prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
