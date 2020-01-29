@@ -84,41 +84,45 @@ public class SQLHelper{
     private static ResultSet results = null;
     private LocalDateTime currDateTime;
     private static TreeMap<Integer,Object> map = null;
+    private static TreeMap<Integer,String> cities = null;
+    private static TreeMap<Integer,String> countries = null;
     /*
         Inserting appointments requires
     */    
     // <editor-fold defaultstate="collapsed" desc="Appointment methods">
-    public static boolean Insert(String userName, String custName,String title, String description, String location, String contact, String type, String url, Timestamp start, Timestamp end) throws SQLException //insert method for appointments
+    public static boolean Insert(Appointment appt, String user) throws SQLException //insert method for appointments
     {
         try{            
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("SELECT customer.customerID, user.userID FROM customer, user WHERE userName = ? OR customerName = ?");
-            prepstatement.setString(1,userName);
-            prepstatement.setString(2,custName);
+            prepstatement = conn.prepareStatement("SELECT customer.customerId, user.userId FROM customer, user WHERE userName = ? OR customerName = ?");
+            prepstatement.setString(1,user);
+            prepstatement.setString(2,appt.getName());
             results = prepstatement.executeQuery();
             if(results == null) throw new NullPointerException();
-            int userID = 0, custID = 0;
-            if(results.next()) custID = results.getInt(1);
-            if(results.next()) userID = results.getInt(1);
+            int userID = -1, custID = -1;
+            if(results.next()) {
+                custID = results.getInt("customerId"); 
+                userID = results.getInt("userId");
+            }
             results = null;            
             prepstatement = conn.prepareStatement("INSERT INTO appointment (customerId, userId, "
                     + "title, description, location, contact, type, url, start, end, createDate, createdBy, lastUpdate, lastUpdateBy) "
                     + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-            prepstatement.setInt(2,custID);
-            prepstatement.setInt(3,userID);
-            prepstatement.setString(4,title);
-            prepstatement.setString(5,description);
-            prepstatement.setString(6,location);
-            prepstatement.setString(7,contact);
-            prepstatement.setString(8,type);
-            prepstatement.setString(9,url);
-            prepstatement.setTimestamp(10, start);
-            prepstatement.setTimestamp(11,end);
-            prepstatement.setTimestamp(12, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
-            prepstatement.setString(13, userName);                                      //on Insert, create == update, this value not to be changed in Update function
-            prepstatement.setTimestamp(14, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
-            prepstatement.setString(15, userName);                                      //on Insert, create == update
+            prepstatement.setInt(1,custID);
+            prepstatement.setInt(2,userID);
+            prepstatement.setString(3,appt.getTitle());
+            prepstatement.setString(4,appt.getDesc());
+            prepstatement.setString(5,appt.getLoc());
+            prepstatement.setString(6,appt.getContact());
+            prepstatement.setString(7,appt.getType());
+            prepstatement.setString(8,appt.getURL());
+            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart()));
+            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd()));
+            prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
+            prepstatement.setString(12, user);                                      //on Insert, create == update, this value not to be changed in Update function
+            prepstatement.setTimestamp(13, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
+            prepstatement.setString(14, user);                                      //on Insert, create == update
             prepstatement.executeUpdate();
             //add appointmentId(PK), customerId, userId, createDate, createdBy, lastUpdate, lastUpdateBy
             return true;
@@ -152,22 +156,55 @@ public class SQLHelper{
         catch(SQLException e){
             return false;
         }
+        finally{
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
+        }
     }
     
-    public static boolean Update(Appointment appt) throws SQLException //update method for appointments
+    public static boolean Update(Appointment appt, String user) throws SQLException //update method for appointments
     {
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("SELECT customer.customerId, user.userId FROM customer, user WHERE userName = ? OR customerName = ?");
+            prepstatement.setString(1,user);
+            prepstatement.setString(2,appt.getName());
+            results = prepstatement.executeQuery();
+            if(results == null) throw new NullPointerException();
+            int userID = -1, custID = -1;
+            if(results.next()) {
+                custID = results.getInt("customerId"); 
+                userID = results.getInt("userId");
+            }
+            results = null;
             prepstatement = conn.prepareStatement("UPDATE appointment "
-                    + "SET customerName = ?, "
+                    + "SET customerId = ?, userId = ?, title = ?, description = ?, location = ?, contact = ?, type = ?, url = ?, start = ?, end = ?, lastUpdate = ?, lastUpdateBy = ?"
                     + "WHERE appointmentId = ?;");
-            prepstatement.setInt(1, appt.getID());
+            prepstatement.setInt(1, custID);
+            prepstatement.setInt(2, userID);
+            prepstatement.setString(3, appt.getTitle());
+            prepstatement.setString(4, appt.getDesc());
+            prepstatement.setString(5, appt.getLoc());
+            prepstatement.setString(6, appt.getContact());
+            prepstatement.setString(7, appt.getType());
+            prepstatement.setString(8, appt.getURL());
+            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart()));
+            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd()));
+            prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(12,user);
+            prepstatement.setInt(13, appt.getID());
             prepstatement.executeUpdate();
             return true;
         }
         catch(SQLException e){
             return false;
+        }
+        finally{
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
         }
     }
     // </editor-fold>
@@ -194,17 +231,51 @@ public class SQLHelper{
             prepstatement.setString(3, cust.getZip());
             prepstatement.setString(4, cust.getPhone());
             prepstatement.execute();
-            prepstatement = conn.prepareStatement("INSERT INTO city ");
+            return true;
         }
-        catch(SQLException e){System.out.println(e.getMessage());}
+        catch(SQLException e){System.out.println(e.getMessage()); return false;}
         finally{            
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
         }
-        
-        return false;
     }
     
+    public static boolean Update(Customer cust, String user)throws SQLException{
+        try{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("UPDATE customer ;");
+            
+            return true;
+        }
+        catch(SQLException e){
+            return false;
+        }
+        finally{
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
+        }
+    }
+    
+    public static boolean Delete(Customer cust) throws SQLException{
+        try{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("DELETE FROM customer WHERE customerId = ?;");
+            prepstatement.setInt(1, cust.getID());
+            prepstatement.execute();
+            return true;
+        }
+        catch(SQLException e){
+            return false;
+        }
+        finally{
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
+        }
+    }
     // </editor-fold>
     
     
@@ -295,9 +366,12 @@ public class SQLHelper{
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
             pass = null;
+            ds = null;
         }
         return pass;
     }
+    
+    
 
 /*static class DataSource {
     private final static String sqlConnect = "jdbc:mysql://3.227.166.251:3306/U062a2";
