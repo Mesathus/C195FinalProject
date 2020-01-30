@@ -214,22 +214,28 @@ public class SQLHelper{
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("INSERT INTO customer "
-                    + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                    + "(?,?,?,?,?,?,?);");
-            prepstatement.setString(2,cust.getName());
-            prepstatement.setBoolean(4, cust.getActive());
-            prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(6, user);
-            prepstatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(8, user);
-            prepstatement.execute();
+            try{
             prepstatement = conn.prepareStatement("INSERT INTO address "
                     + "(address, address2, postalCode, phone) VALUES (?,?,?,?)");
             prepstatement.setString(1, cust.getAddr()[0]);
             prepstatement.setString(2, cust.getAddr()[1]);
             prepstatement.setString(3, cust.getZip());
             prepstatement.setString(4, cust.getPhone());
+            prepstatement.execute();}
+            catch(SQLException e){
+                System.out.println(e.getMessage());
+            }
+            prepstatement = conn.prepareStatement("INSERT INTO customer "
+                    + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
+                    + "(?,(SELECT addressId FROM address WHERE address1 LIKE ? AND address2 LIKE ?;),?,?,?,?,?);");
+            prepstatement.setString(1, cust.getName());
+            prepstatement.setString(2, cust.getAddr()[0]);
+            prepstatement.setString(3, cust.getAddr()[1]);
+            prepstatement.setBoolean(4, cust.getActive());
+            prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(6, user);
+            prepstatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(8, user);
             prepstatement.execute();
             return true;
         }
@@ -244,8 +250,14 @@ public class SQLHelper{
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("UPDATE customer ;");
-            
+            prepstatement = conn.prepareStatement("UPDATE customer "
+                    + "SET customerName = ?, addressId = ?, active = ?, lastUpdate = ?, lastUpdateBy = ?;");
+            prepstatement.setString(1, cust.getName());
+            prepstatement.setInt(2, cust.getAddrID());
+            prepstatement.setBoolean(3, cust.getActive());
+            prepstatement.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(5, user);
+            prepstatement.executeUpdate();
             return true;
         }
         catch(SQLException e){
@@ -325,7 +337,8 @@ public class SQLHelper{
             results = prepstatement.executeQuery();
             while(results.next()){
                 //int custID, String custName, String add1, String add2, String postCode, String phone, String city, String country
-                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getBoolean("active"),results.getString("address"),results.getString("address2"),results.getString("postalCode"),
+                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getInt("addressId"),results.getBoolean("active"),
+                results.getString("address"),results.getString("address2"),results.getString("postalCode"),
                 results.getString("phone"),results.getString("city"),results.getString("country"));
                 map.put(cust.getID(), cust);
             }
@@ -337,6 +350,39 @@ public class SQLHelper{
         }
         finally{
             map = null;
+            if(results != null) results.close();
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
+        }
+    }
+    
+    public static TreeMap GetCiCo() throws SQLException{
+        try{
+            cities = new TreeMap<>();
+            countries = new TreeMap<>();
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("SELECT city.cityId, city.city, country.countryId, country.country "
+                    + "FROM city INNER JOIN country ON city.countryId = country.countryId;");
+            results = prepstatement.executeQuery();
+            if(results == null) return null;
+            while(results.next()){
+                cities.put(results.getInt("cityId"), results.getString("city"));
+                countries.put(results.getInt("countryId"),results.getString("country"));                
+            }
+            TreeMap<Integer,TreeMap> arr = new TreeMap<>();
+            arr.put(0,cities);
+            arr.put(1,countries);
+            return arr;
+        }
+        catch(SQLException e){
+            System.out.println(e.getMessage());
+            return null;
+        }
+        finally{
+            cities = null;
+            countries = null;
             if(results != null) results.close();
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();

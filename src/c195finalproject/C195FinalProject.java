@@ -292,6 +292,23 @@ public class C195FinalProject extends Application {
     public Scene GetCustomers(String curUser){
         BorderPane custPane = new BorderPane();
         Scene custScene = new Scene(custPane,800,600);
+        ComboBox cityBox = new ComboBox();
+        ComboBox countryBox = new ComboBox();
+        TreeMap<Integer,TreeMap> CiCo;
+        try{
+            CiCo = SQLHelper.GetCiCo();
+            for(Integer key: CiCo.keySet()){
+                if(key.equals(0)){
+                    
+                }
+                else if(key.equals(1)){
+                    
+                }
+            }
+        }
+        catch(SQLException e){
+            CiCo = null;
+        }
         return custScene;
     }
     

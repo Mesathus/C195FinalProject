@@ -14,6 +14,7 @@ public class Customer implements Comparable<Customer>{
     private String custName;
     private String custFirstName;
     private String custLastName;
+    private Integer addressID = null;
     private Boolean active;
     private String address1;
     private String address2;
@@ -22,12 +23,13 @@ public class Customer implements Comparable<Customer>{
     private String city;
     private String country;
     
-    public Customer(int custID, String custName, Boolean active,String add1, String add2, String postCode, String phone, String city, String country){
+    public Customer(int custID, String custName, Integer addressID, Boolean active,String add1, String add2, String postCode, String phone, String city, String country){
         try{
             this.custID = custID;
             String[] arrName = custName.split(" ");
             this.custFirstName = arrName[0];
             this.custLastName = arrName[1];
+            this.addressID = addressID;
             this.active = active;
             this.address1 = add1;
             this.address2 = add2;
@@ -51,6 +53,9 @@ public class Customer implements Comparable<Customer>{
     }
     public String getName(){
         return custFirstName + " " + custLastName;
+    }
+    public Integer getAddrID(){
+        return addressID;
     }
     public Boolean getActive(){
         return active;
