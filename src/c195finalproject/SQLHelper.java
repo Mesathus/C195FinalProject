@@ -227,15 +227,16 @@ public class SQLHelper{
             }
             prepstatement = conn.prepareStatement("INSERT INTO customer "
                     + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                    + "(?,(SELECT addressId FROM address WHERE address1 LIKE ? AND address2 LIKE ?;),?,?,?,?,?);");
+                    + "(?,(SELECT addressId FROM address WHERE address1 LIKE ? AND address2 LIKE ? AND phone LIKE ?;),?,?,?,?,?);");
             prepstatement.setString(1, cust.getName());
             prepstatement.setString(2, cust.getAddr()[0]);
             prepstatement.setString(3, cust.getAddr()[1]);
-            prepstatement.setBoolean(4, cust.getActive());
-            prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(6, user);
-            prepstatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(8, user);
+            prepstatement.setString(4, cust.getPhone());
+            prepstatement.setBoolean(5, cust.getActive());
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(7, user);
+            prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(9, user);
             prepstatement.execute();
             return true;
         }
