@@ -216,18 +216,23 @@ public class SQLHelper{
             conn = ds.getMDS().getConnection();
             try{
             prepstatement = conn.prepareStatement("INSERT INTO address "
-                    + "(address, address2, postalCode, phone) VALUES (?,?,?,?)");
+                    + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
             prepstatement.setString(1, cust.getAddr()[0]);
             prepstatement.setString(2, cust.getAddr()[1]);
-            prepstatement.setString(3, cust.getZip());
-            prepstatement.setString(4, cust.getPhone());
+            prepstatement.setString(3, cust.getCity());
+            prepstatement.setString(4, cust.getZip());
+            prepstatement.setString(5, cust.getPhone());
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
+            prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
+            prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
+            prepstatement.setString(9, user);                                          //on Insert, create == update
             prepstatement.execute();}
             catch(SQLException e){
                 System.out.println(e.getMessage());
             }
             prepstatement = conn.prepareStatement("INSERT INTO customer "
                     + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                    + "(?,(SELECT addressId FROM address WHERE address1 LIKE ? AND address2 LIKE ? AND phone LIKE ?;),?,?,?,?,?);");
+                    + "(?,(SELECT addressId FROM address WHERE address LIKE ? AND address2 LIKE ? AND phone LIKE ?),?,?,?,?,?);");
             prepstatement.setString(1, cust.getName());
             prepstatement.setString(2, cust.getAddr()[0]);
             prepstatement.setString(3, cust.getAddr()[1]);
@@ -315,7 +320,6 @@ public class SQLHelper{
         }
         catch(SQLException e){System.out.println(e.getMessage());return null;}
         finally{
-            map = null;
             if(results != null) results.close();
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
@@ -350,7 +354,6 @@ public class SQLHelper{
             return null;
         }
         finally{
-            map = null;
             if(results != null) results.close();
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
@@ -417,7 +420,18 @@ public class SQLHelper{
         }
         return pass;
     }
-    
+    public static void PurgeAddr() throws SQLException{
+        try{    
+        ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("DELETE FROM address WHERE addressId = *;");
+        prepstatement.executeUpdate();}
+        catch(SQLException e){}
+        finally{
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+        }
+    }
     
 
 /*static class DataSource {

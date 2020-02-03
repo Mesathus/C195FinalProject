@@ -36,6 +36,8 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
 
@@ -75,8 +77,8 @@ public class C195FinalProject extends Application {
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
         //Scene scene = GetLogin();
-        Scene scene = GetCalendar("test");
-        primaryStage.setTitle("C195 Inc. Login");
+        Scene scene = GetCustomers("test");
+        primaryStage.setTitle(RB.getString("loginTitle"));
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -99,7 +101,7 @@ public class C195FinalProject extends Application {
         loginError.setWrapText(true);
         TextField txtName = new TextField();
         PasswordField txtPass = new PasswordField();
-        btnLogin.setText("Login");
+        btnLogin.setText(RB.getString("login"));
         btnLogin.setOnAction(event -> {
             try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString()) && (txtName.getText().length() > 0)){
                    Logging.StampLog(txtName.getText());
@@ -149,6 +151,7 @@ public class C195FinalProject extends Application {
         Button btnInsert = new Button();
         Button btnUpdate = new Button();
         Button btnDelete = new Button();
+        Button btnEditCust = new Button();
         Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
         Button[] btnWeekArray = new Button[7];
         
@@ -181,7 +184,7 @@ public class C195FinalProject extends Application {
         paneTop.setHgap(5);
         paneTop.setPadding(new Insets(5,0,10,5));
         btnExit.setText("Exit");
-        btnExit.setOnAction(event -> {mainStage.setScene(GetLogin());mainStage.show();});
+        btnExit.setOnAction(event -> {Platform.exit();});
         btnWeek.setText("Week View");
         btnMonth.setText("Month View");
         GridPane.setConstraints(btnWeek,0,0);
@@ -195,10 +198,18 @@ public class C195FinalProject extends Application {
         btnInsert.setText("Insert Appointment"); btnInsert.setMaxWidth(Double.MAX_VALUE);
         btnUpdate.setText("Update Appointment"); btnUpdate.setMaxWidth(Double.MAX_VALUE);
         btnDelete.setText("Delete Appointment"); btnDelete.setMaxWidth(Double.MAX_VALUE);
+        btnEditCust.setText(RB.getString("btnEditCust")); btnEditCust.setMaxWidth(Double.MAX_VALUE);
+        btnEditCust.setOnAction(event -> 
+                                {altStage = new Stage();
+                                altStage.setTitle("Customer Edits");
+                                Scene scene = GetCustomers(curUser);
+                                altStage.setScene(scene);
+                                altStage.show();
+                                });
         leftSide.setAlignment(Pos.CENTER_LEFT);
         leftSide.setSpacing(15);
         leftSide.setPadding(new Insets(0,0,0,0));
-        leftSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
+        leftSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete,btnEditCust);
         // </editor-fold> 
         //end left side creation        
         
@@ -262,7 +273,7 @@ public class C195FinalProject extends Application {
             startTimer.setPeriod(Duration.seconds(.01));
             startTimer.start();
         }
-        catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to run");}
+        catch(Exception e){System.out.println(e.getMessage());System.out.println("Failed to start clock.");}
         // </editor-fold>
         //end bottom panel creation
         
@@ -276,11 +287,12 @@ public class C195FinalProject extends Application {
         return calScene;
     }
     
-    public Scene GetAppointments(String curUser) throws SQLException{
+    public Scene GetAppointments(String curUser){
         BorderPane apptPane = new BorderPane();
         ComboBox apptCBox = new ComboBox();
         try{
             TreeMap<Integer,Object> apptMap = SQLHelper.GetAppointments(curUser);
+            apptMap.values().forEach(value -> {apptCBox.getItems().add(value);});
         }
         catch(SQLException e){
             
@@ -290,25 +302,96 @@ public class C195FinalProject extends Application {
     }
     
     public Scene GetCustomers(String curUser){
-        BorderPane custPane = new BorderPane();
-        Scene custScene = new Scene(custPane,800,600);
-        ComboBox cityBox = new ComboBox();
+        // <editor-fold defaultstate="collapsed" desc="creating form components">
+        GridPane custPane = new GridPane();
+        Scene custScene = new Scene(custPane,700,300);
+        ComboBox cityBox = new ComboBox();        
         ComboBox countryBox = new ComboBox();
+        ComboBox activeBox = new ComboBox(); activeBox.getItems().addAll(RB.getString("active"),RB.getString("inactive"));
+        Button btnCreateCust = new Button(RB.getString("createBtn")); btnCreateCust.setMaxWidth(Double.MAX_VALUE);
+        Button btnUpdateCust = new Button(RB.getString("updateBtn")); btnUpdateCust.setMaxWidth(Double.MAX_VALUE);
+        Button btnDeleteCust = new Button(RB.getString("deleteBtn")); btnDeleteCust.setMaxWidth(Double.MAX_VALUE);
+        Label lblFName = new Label(RB.getString("lblfirstName"));
+        Label lblLName = new Label(RB.getString("lbllastName"));
+        Label lblAddr1 = new Label(RB.getString("lbladdrOne"));
+        Label lblAddr2 = new Label(RB.getString("lbladdrTwo"));
+        Label lblPostCode = new Label(RB.getString("lblpostCode"));
+        Label lblActive = new Label(RB.getString("lblactive"));
+        Label lblPhone = new Label(RB.getString("lblphone"));
+        Label lblCity = new Label(RB.getString("lblcity"));
+        Label lblCountry = new Label(RB.getString("lblcountry"));
+        TextField txtFName = new TextField();
+        TextField txtLName = new TextField();
+        TextField txtAddr1 = new TextField();
+        TextField txtAddr2 = new TextField();
+        TextField txtPostCode = new TextField();
+        TextField txtPhone = new TextField();
+        Alert altEmptyField = new Alert(AlertType.INFORMATION); altEmptyField.setContentText("A value must be entered in all fields.");
+        Alert altDBError = new Alert(AlertType.ERROR); altDBError.setContentText("An error occured when processing your database request.");
+        // </editor-fold>
+        
+        //other variable and objects
         TreeMap<Integer,TreeMap> CiCo;
+        TreeMap<Integer,String> cityMap, countryMap;
+        try{TreeMap<Integer,Customer> custMap = SQLHelper.GetCustomers();}
+        catch(SQLException e){System.out.println("Unable to load customer list.");}
+        
+        // <editor-fold defaultstate="collapsed" desc="setting grid positions">
+        GridPane.setConstraints(cityBox,4,3);
+        GridPane.setConstraints(countryBox,4,4);
+        GridPane.setConstraints(activeBox,4,0);
+        GridPane.setConstraints(btnCreateCust,0,5);
+        GridPane.setConstraints(btnUpdateCust,1,5);
+        GridPane.setConstraints(btnDeleteCust,2,5);
+        GridPane.setConstraints(lblFName,0,0);
+        GridPane.setConstraints(lblLName,0,1);
+        GridPane.setConstraints(lblAddr1,0,2);
+        GridPane.setConstraints(lblAddr2,0,3);
+        GridPane.setConstraints(lblPostCode,0,4);
+        GridPane.setConstraints(lblActive,3,0);
+        GridPane.setConstraints(lblPhone,3,2);
+        GridPane.setConstraints(lblCity,3,3);
+        GridPane.setConstraints(lblCountry,3,4);
+        GridPane.setConstraints(txtFName,1,0);
+        GridPane.setConstraints(txtLName,1,1);
+        GridPane.setConstraints(txtAddr1,1,2);
+        GridPane.setConstraints(txtAddr2,1,3);
+        GridPane.setConstraints(txtPostCode,1,4);
+        GridPane.setConstraints(txtPhone,4,2);
+        // </editor-fold>
+        
+        custPane.setPadding(new Insets(20,5,5,10));
+        
+        btnCreateCust.setOnAction(event -> {
+            //String custName, String address, Boolean active,String postCode, String phone, String city, String country
+                try{
+                    SQLHelper.PurgeAddr();
+                    StringBuilder filler = new StringBuilder(); filler.insert(0,"\u0020"); filler.insert(0,txtAddr2.getText());
+                    Boolean bool = activeBox.getValue().equals(RB.getString("active"));
+                    Customer cust = new Customer(txtFName.getText() + " " + txtLName.getText(),
+                                                txtAddr1.getText() + "," + filler, bool,
+                                                txtPostCode.getText(),txtPhone.getText(),
+                                                cityBox.getValue().toString(),countryBox.getValue().toString());
+                    SQLHelper.Insert(cust, curUser);
+                }
+                catch(NullPointerException|ArrayIndexOutOfBoundsException e){altEmptyField.show();e.printStackTrace();}
+                catch(SQLException e){altDBError.show();e.printStackTrace();}
+            });
+        
         try{
             CiCo = SQLHelper.GetCiCo();
-            for(Integer key: CiCo.keySet()){
-                if(key.equals(0)){
-                    
-                }
-                else if(key.equals(1)){
-                    
-                }
-            }
+            cityMap = CiCo.get(0);
+            countryMap = CiCo.get(1);
+            cityMap.values().forEach(value -> {cityBox.getItems().add(value);});
+            countryMap.values().forEach(value -> {countryBox.getItems().add(value);});
         }
         catch(SQLException e){
-            CiCo = null;
+            System.out.println("An error occured retrieving the city/country lists.");
         }
+        
+        custPane.getChildren().addAll(cityBox,countryBox,activeBox,btnCreateCust,btnUpdateCust,btnDeleteCust,
+                                      lblFName,lblLName,lblAddr1,lblAddr2,lblPostCode,lblActive,lblPhone,lblCity,lblCountry,
+                                      txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone);
         return custScene;
     }
     

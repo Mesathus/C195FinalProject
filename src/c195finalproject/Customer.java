@@ -39,7 +39,23 @@ public class Customer implements Comparable<Customer>{
             this.country = country;
         }
         catch(NullPointerException e){System.out.println(e.getMessage());}
-    }    
+    }
+    public Customer(String custName, String address, Boolean active,String postCode, String phone, String city, String country){
+        try{
+            String[] arrName = custName.split(" ");
+            this.custFirstName = arrName[0];
+            this.custLastName = arrName[1];
+            this.active = active;
+            String[] addr = address.split(",");
+            this.address1 = addr[0];
+            this.address2 = addr[1];
+            this.postalCode = postCode;
+            this.phone = phone;
+            this.city = city;
+            this.country = country;
+        }
+        catch(NullPointerException e){System.out.println(e.getMessage());}
+    }
     @Override
     public int compareTo(Customer cust){
         return custID.compareTo(cust.custID);
@@ -69,5 +85,11 @@ public class Customer implements Comparable<Customer>{
     }
     public String getPhone(){
         return phone;
+    }
+    public String getCity(){
+        return city;
+    }
+    public String getCountry(){
+        return country;
     }
 }
