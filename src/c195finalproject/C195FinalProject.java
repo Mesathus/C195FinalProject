@@ -38,6 +38,7 @@ import java.util.ResourceBundle;
 import java.util.TreeMap;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
 
@@ -292,7 +293,7 @@ public class C195FinalProject extends Application {
         ComboBox apptCBox = new ComboBox();
         try{
             TreeMap<Integer,Object> apptMap = SQLHelper.GetAppointments(curUser);
-            apptMap.values().forEach(value -> {apptCBox.getItems().add(value);});
+            apptMap.values().forEach(value -> {apptCBox.getItems().add(value.toString());});
         }
         catch(SQLException e){
             
@@ -304,7 +305,7 @@ public class C195FinalProject extends Application {
     public Scene GetCustomers(String curUser){
         // <editor-fold defaultstate="collapsed" desc="creating form components">
         GridPane custPane = new GridPane();
-        Scene custScene = new Scene(custPane,700,300);
+        Scene custScene = new Scene(custPane,900,300);
         ComboBox cityBox = new ComboBox();        
         ComboBox countryBox = new ComboBox();
         ComboBox activeBox = new ComboBox(); activeBox.getItems().addAll(RB.getString("active"),RB.getString("inactive"));
@@ -320,29 +321,38 @@ public class C195FinalProject extends Application {
         Label lblPhone = new Label(RB.getString("lblphone"));
         Label lblCity = new Label(RB.getString("lblcity"));
         Label lblCountry = new Label(RB.getString("lblcountry"));
+        Label lblReq = new Label(RB.getString("lblrequired"));
         TextField txtFName = new TextField();
         TextField txtLName = new TextField();
         TextField txtAddr1 = new TextField();
         TextField txtAddr2 = new TextField();
         TextField txtPostCode = new TextField();
         TextField txtPhone = new TextField();
-        Alert altEmptyField = new Alert(AlertType.INFORMATION); altEmptyField.setContentText("A value must be entered in all fields.");
+        Alert altEmptyField = new Alert(AlertType.INFORMATION); altEmptyField.setContentText("A value must be entered in all required fields.");
         Alert altDBError = new Alert(AlertType.ERROR); altDBError.setContentText("An error occured when processing your database request.");
+        ScrollPane custList = new ScrollPane();
+        TextFlow custFlow = new TextFlow();
         // </editor-fold>
         
         //other variable and objects
         TreeMap<Integer,TreeMap> CiCo;
         TreeMap<Integer,String> cityMap, countryMap;
-        try{TreeMap<Integer,Customer> custMap = SQLHelper.GetCustomers();}
+        TreeMap<Integer,Customer> custMap = new TreeMap();
+        
+        //load customer data
+        try{custMap = SQLHelper.GetCustomers();}
         catch(SQLException e){System.out.println("Unable to load customer list.");}
+        if(custMap.size() > 0){            
+            custMap.values().forEach(value -> custFlow.getChildren().add(new TextField(value.toString())));
+        }
         
         // <editor-fold defaultstate="collapsed" desc="setting grid positions">
         GridPane.setConstraints(cityBox,4,3);
         GridPane.setConstraints(countryBox,4,4);
         GridPane.setConstraints(activeBox,4,0);
-        GridPane.setConstraints(btnCreateCust,0,5);
-        GridPane.setConstraints(btnUpdateCust,1,5);
-        GridPane.setConstraints(btnDeleteCust,2,5);
+        GridPane.setConstraints(btnCreateCust,0,6);
+        GridPane.setConstraints(btnUpdateCust,1,6);
+        GridPane.setConstraints(btnDeleteCust,2,6);
         GridPane.setConstraints(lblFName,0,0);
         GridPane.setConstraints(lblLName,0,1);
         GridPane.setConstraints(lblAddr1,0,2);
@@ -352,20 +362,24 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(lblPhone,3,2);
         GridPane.setConstraints(lblCity,3,3);
         GridPane.setConstraints(lblCountry,3,4);
+        GridPane.setConstraints(lblReq,0,5,4,1);
         GridPane.setConstraints(txtFName,1,0);
         GridPane.setConstraints(txtLName,1,1);
         GridPane.setConstraints(txtAddr1,1,2);
         GridPane.setConstraints(txtAddr2,1,3);
         GridPane.setConstraints(txtPostCode,1,4);
         GridPane.setConstraints(txtPhone,4,2);
+        GridPane.setConstraints(custList,5,0);
         // </editor-fold>
         
         custPane.setPadding(new Insets(20,5,5,10));
+        custList.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        custList.setPrefWidth(80);
         
         btnCreateCust.setOnAction(event -> {
             //String custName, String address, Boolean active,String postCode, String phone, String city, String country
                 try{
-                    SQLHelper.PurgeAddr();
+                    //SQLHelper.PurgeAddr();
                     StringBuilder filler = new StringBuilder(); filler.insert(0,"\u0020"); filler.insert(0,txtAddr2.getText());
                     Boolean bool = activeBox.getValue().equals(RB.getString("active"));
                     Customer cust = new Customer(txtFName.getText() + " " + txtLName.getText(),
@@ -390,8 +404,9 @@ public class C195FinalProject extends Application {
         }
         
         custPane.getChildren().addAll(cityBox,countryBox,activeBox,btnCreateCust,btnUpdateCust,btnDeleteCust,
-                                      lblFName,lblLName,lblAddr1,lblAddr2,lblPostCode,lblActive,lblPhone,lblCity,lblCountry,
-                                      txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone);
+                                      lblFName,lblLName,lblAddr1,lblAddr2,lblPostCode,lblActive,lblPhone,lblCity,lblCountry,lblReq,
+                                      txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone,
+                                      custList);
         return custScene;
     }
     

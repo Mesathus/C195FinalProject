@@ -215,34 +215,44 @@ public class SQLHelper{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             try{
-            prepstatement = conn.prepareStatement("INSERT INTO address "
-                    + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
-            prepstatement.setString(1, cust.getAddr()[0]);
-            prepstatement.setString(2, cust.getAddr()[1]);
-            prepstatement.setString(3, cust.getCity());
-            prepstatement.setString(4, cust.getZip());
-            prepstatement.setString(5, cust.getPhone());
-            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
-            prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
-            prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
-            prepstatement.setString(9, user);                                          //on Insert, create == update
-            prepstatement.execute();}
+                prepstatement = conn.prepareStatement("INSERT INTO address "
+                        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
+                        + "SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp "
+                        + "WHERE NOT EXISTS(SELECT address, address, cityId, postalCode, phone FROM address "
+                        + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");
+                        //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
+                prepstatement.setString(1, cust.getAddr()[0]);
+                prepstatement.setString(2, cust.getAddr()[1]);
+                prepstatement.setString(3, cust.getCity());
+                prepstatement.setString(4, cust.getZip());
+                prepstatement.setString(5, cust.getPhone());
+                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
+                prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
+                prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
+                prepstatement.setString(9, user);                                          //on Insert, create == update
+                prepstatement.setString(10,cust.getAddr()[0]);
+                prepstatement.setString(11,cust.getAddr()[1]);
+                prepstatement.setString(12,cust.getCity());
+                prepstatement.setString(13,cust.getZip());
+                prepstatement.setString(14,cust.getPhone());
+                System.out.println(prepstatement.execute());
+            }
             catch(SQLException e){
                 System.out.println(e.getMessage());
             }
-            prepstatement = conn.prepareStatement("INSERT INTO customer "
-                    + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                    + "(?,(SELECT addressId FROM address WHERE address LIKE ? AND address2 LIKE ? AND phone LIKE ?),?,?,?,?,?);");
-            prepstatement.setString(1, cust.getName());
-            prepstatement.setString(2, cust.getAddr()[0]);
-            prepstatement.setString(3, cust.getAddr()[1]);
-            prepstatement.setString(4, cust.getPhone());
-            prepstatement.setBoolean(5, cust.getActive());
-            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(7, user);
-            prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(9, user);
-            prepstatement.execute();
+                prepstatement = conn.prepareStatement("INSERT INTO customer "
+                        + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
+                        + "(?,(SELECT addressId FROM address WHERE address LIKE ? AND address2 LIKE ? AND phone LIKE ?),?,?,?,?,?);");
+                prepstatement.setString(1, cust.getName());
+                prepstatement.setString(2, cust.getAddr()[0]);
+                prepstatement.setString(3, cust.getAddr()[1]);
+                prepstatement.setString(4, cust.getPhone());
+                prepstatement.setBoolean(5, cust.getActive());
+                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+                prepstatement.setString(7, user);
+                prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+                prepstatement.setString(9, user);
+                prepstatement.execute();
             return true;
         }
         catch(SQLException e){System.out.println(e.getMessage()); return false;}
@@ -267,6 +277,7 @@ public class SQLHelper{
             return true;
         }
         catch(SQLException e){
+            System.out.println(e.getMessage());
             return false;
         }
         finally{
@@ -422,11 +433,14 @@ public class SQLHelper{
     }
     public static void PurgeAddr() throws SQLException{
         try{    
-        ds = DataSource.getInstance();
+            ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("DELETE FROM address WHERE addressId = *;");
-        prepstatement.executeUpdate();}
-        catch(SQLException e){}
+            //prepstatement = conn.prepareStatement("DELETE FROM address WHERE address = '30 Rockefeller Plaza';");
+            prepstatement = conn.prepareStatement("SELECT * FROM address;");
+            results = prepstatement.executeQuery();
+            while(results.next()){System.out.println(results.getString("address"));}
+        }
+        catch(SQLException e){System.out.println(e.getMessage());}
         finally{
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
