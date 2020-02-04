@@ -262,6 +262,47 @@ public class SQLHelper{
         }
     }
     
+    public static void Test(Customer cust, String user)throws SQLException{
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            try{
+                prepstatement = conn.prepareStatement("SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp;");
+                        //+ "WHERE NOT EXISTS(SELECT address, address2, cityId, postalCode, phone FROM address "
+                        //+ "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");
+                        //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
+                        //("INSERT INTO address (SELECT ?,?,?,?,?,?,?,? FROM DUAL) WHERE NOT EXISTS(SELECT * FROM address WHERE address = ? AND address2 = ? AND postalCode = ? "
+                        //+ " AND phone = ?);");
+                prepstatement.setString(1, cust.getAddr()[0]);
+                prepstatement.setString(2, cust.getAddr()[1]);
+                prepstatement.setString(3, cust.getCity());
+                prepstatement.setString(4, cust.getZip());
+                prepstatement.setString(5, cust.getPhone());
+                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
+                prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
+                prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
+                prepstatement.setString(9, user);                                          //on Insert, create == update
+                //prepstatement.setString(10,cust.getAddr()[0]);
+                //prepstatement.setString(11,cust.getAddr()[1]);
+                //prepstatement.setString(12,cust.getCity());
+                //prepstatement.setString(13,cust.getZip());
+                //prepstatement.setString(14,cust.getPhone());
+                results = prepstatement.executeQuery();
+                while(results.next()){System.out.println(results.getString("address"));
+                                      System.out.println(results.getString("address2"));
+                                      System.out.println(results.getString("cityId"));
+                                      System.out.println(results.getString("postalCode"));
+                                      System.out.println(results.getString("phone"));              
+                }
+            }
+            catch(SQLException e){
+                System.out.println(e.getMessage());
+            }
+            finally{            
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+        }
+    }
+    
     public static boolean Update(Customer cust, String user)throws SQLException{
         try{
             ds = DataSource.getInstance();
