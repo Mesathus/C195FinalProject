@@ -386,7 +386,7 @@ public class C195FinalProject extends Application {
                                                 txtAddr1.getText() + "," + filler, bool,
                                                 txtPostCode.getText(),txtPhone.getText(),
                                                 cityBox.getValue().toString(),countryBox.getValue().toString());
-                    SQLHelper.Test(cust, curUser);
+                    SQLHelper.Insert(cust, curUser);
                 }
                 catch(NullPointerException|ArrayIndexOutOfBoundsException e){altEmptyField.show();e.printStackTrace();}
                 catch(SQLException e){altDBError.show();e.printStackTrace();}

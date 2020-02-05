@@ -215,11 +215,15 @@ public class SQLHelper{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             try{
-                prepstatement = conn.prepareStatement("INSERT INTO address "
-                        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
+                prepstatement = conn.prepareStatement("INSERT INTO address (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
+                        + "(?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) "
+                        + "WHERE NOT EXISTS (SELECT * FROM address WHERE (address = ? AND address2 = ? AND city = ? AND postalCode = ? AND phone = ?)) LIMIT 1;");
+                        
+                        /*"INSERT INTO address "
+                        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
                         + "SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp "
                         + "WHERE NOT EXISTS(SELECT address, address, cityId, postalCode, phone FROM address "
-                        + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");
+                        + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");*/
                         //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
                 prepstatement.setString(1, cust.getAddr()[0]);
                 prepstatement.setString(2, cust.getAddr()[1]);
