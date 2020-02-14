@@ -215,9 +215,9 @@ public class SQLHelper{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             try{
-                prepstatement = conn.prepareStatement("INSERT INTO address (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
-                        + "(?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) "
-                        + "WHERE NOT EXISTS (SELECT * FROM address WHERE (address = ? AND address2 = ? AND city = ? AND postalCode = ? AND phone = ?)) LIMIT 1;");
+                prepstatement = conn.prepareStatement("INSERT INTO address (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
+                        + "SELECT ?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,? "
+                        + "WHERE NOT EXISTS (SELECT addressId FROM address WHERE address = ? AND address2 = ? AND postalCode = ? AND phone = ?);");
                         
                         /*"INSERT INTO address "
                         + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
@@ -481,9 +481,11 @@ public class SQLHelper{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             //prepstatement = conn.prepareStatement("DELETE FROM address WHERE address = '30 Rockefeller Plaza';");
-            prepstatement = conn.prepareStatement("SELECT * FROM address;");
+            //prepstatement.execute();
+            prepstatement = conn.prepareStatement("SELECT * FROM customer;");
             results = prepstatement.executeQuery();
-            while(results.next()){System.out.println(results.getString("address"));}
+            while(results.next()){System.out.println(results.getString("customerName"));}
+            
         }
         catch(SQLException e){System.out.println(e.getMessage());}
         finally{
