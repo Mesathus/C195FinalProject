@@ -50,7 +50,7 @@ public class Appointment implements Comparable<Appointment>{
     }
     @Override
     public String toString(){
-        return title;
+        return title + System.lineSeparator() + custLastName + " ," + custFirstName;
     }
     
     // <editor-fold defaultstate="collapsed" desc="Getters">

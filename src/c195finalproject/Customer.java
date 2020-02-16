@@ -40,6 +40,23 @@ public class Customer implements Comparable<Customer>{
         }
         catch(NullPointerException e){System.out.println(e.getMessage());}
     }
+    public Customer(int custID, String custName, String address, Boolean active,String postCode, String phone, String city, String country){
+        try{
+            this.custID = custID;
+            String[] arrName = custName.split(" ");
+            this.custFirstName = arrName[0];
+            this.custLastName = arrName[1];
+            this.active = active;
+            String[] addr = address.split(",");
+            this.address1 = addr[0];
+            this.address2 = addr[1];
+            this.postalCode = postCode;
+            this.phone = phone;
+            this.city = city;
+            this.country = country;
+        }
+        catch(NullPointerException e){System.out.println(e.getMessage());}
+    }
     public Customer(String custName, String address, Boolean active,String postCode, String phone, String city, String country){
         try{
             String[] arrName = custName.split(" ");

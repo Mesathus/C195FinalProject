@@ -214,17 +214,25 @@ public class SQLHelper{
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            try{
+            prepstatement = conn.prepareStatement("SELECT * FROM address "
+                    + "WHERE address = ? AND address2 = ? AND cityId = (SELECT cityId FROM city WHERE city = ?) AND postalCode = ? AND phone = ?;");
+
+                    /*"INSERT INTO address "
+                    + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
+                    + "SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp "
+                    + "WHERE NOT EXISTS(SELECT address, address, cityId, postalCode, phone FROM address "
+                    + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");*/
+                    //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
+            prepstatement.setString(1, cust.getAddr()[0]);
+            prepstatement.setString(2, cust.getAddr()[1]);
+            prepstatement.setString(3, cust.getCity());
+            prepstatement.setString(4, cust.getZip());
+            prepstatement.setString(5, cust.getPhone());
+            results = prepstatement.executeQuery();
+            
+            if(!results.first()){
                 prepstatement = conn.prepareStatement("INSERT INTO address (address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) "
-                        + "SELECT ?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,? "
-                        + "WHERE NOT EXISTS (SELECT addressId FROM address WHERE address = ? AND address2 = ? AND postalCode = ? AND phone = ?);");
-                        
-                        /*"INSERT INTO address "
-                        + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
-                        + "SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp "
-                        + "WHERE NOT EXISTS(SELECT address, address, cityId, postalCode, phone FROM address "
-                        + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");*/
-                        //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
+                        + "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
                 prepstatement.setString(1, cust.getAddr()[0]);
                 prepstatement.setString(2, cust.getAddr()[1]);
                 prepstatement.setString(3, cust.getCity());
@@ -233,30 +241,24 @@ public class SQLHelper{
                 prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
                 prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
                 prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
-                prepstatement.setString(9, user);                                          //on Insert, create == update
-                prepstatement.setString(10,cust.getAddr()[0]);
-                prepstatement.setString(11,cust.getAddr()[1]);
-                prepstatement.setString(12,cust.getCity());
-                prepstatement.setString(13,cust.getZip());
-                prepstatement.setString(14,cust.getPhone());
-                System.out.println(prepstatement.execute());
-            }
-            catch(SQLException e){
-                System.out.println(e.getMessage());
-            }
-                prepstatement = conn.prepareStatement("INSERT INTO customer "
-                        + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
-                        + "(?,(SELECT addressId FROM address WHERE address LIKE ? AND address2 LIKE ? AND phone LIKE ?),?,?,?,?,?);");
-                prepstatement.setString(1, cust.getName());
-                prepstatement.setString(2, cust.getAddr()[0]);
-                prepstatement.setString(3, cust.getAddr()[1]);
-                prepstatement.setString(4, cust.getPhone());
-                prepstatement.setBoolean(5, cust.getActive());
-                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
-                prepstatement.setString(7, user);
-                prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
                 prepstatement.setString(9, user);
-                prepstatement.execute();
+                int rows = prepstatement.executeUpdate();
+                System.out.println(rows);
+            }
+
+            prepstatement = conn.prepareStatement("INSERT INTO customer "
+                    + "(customerName,addressId,active,createDate,createdBy,lastUpdate,lastUpdateBy) VALUES "
+                    + "(?,(SELECT addressId FROM address WHERE address = ? AND address2 = ? AND phone = ?),?,?,?,?,?);");
+            prepstatement.setString(1, cust.getName());
+            prepstatement.setString(2, cust.getAddr()[0]);
+            prepstatement.setString(3, cust.getAddr()[1]);
+            prepstatement.setString(4, cust.getPhone());
+            prepstatement.setBoolean(5, cust.getActive());
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(7, user);
+            prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(9, user);
+            prepstatement.execute();
             return true;
         }
         catch(SQLException e){System.out.println(e.getMessage()); return false;}
@@ -264,61 +266,55 @@ public class SQLHelper{
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
         }
-    }
-    
-    public static void Test(Customer cust, String user)throws SQLException{
-            ds = DataSource.getInstance();
-            conn = ds.getMDS().getConnection();
-            try{
-                prepstatement = conn.prepareStatement("SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp;");
-                        //+ "WHERE NOT EXISTS(SELECT address, address2, cityId, postalCode, phone FROM address "
-                        //+ "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");
-                        //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
-                        //("INSERT INTO address (SELECT ?,?,?,?,?,?,?,? FROM DUAL) WHERE NOT EXISTS(SELECT * FROM address WHERE address = ? AND address2 = ? AND postalCode = ? "
-                        //+ " AND phone = ?);");
-                prepstatement.setString(1, cust.getAddr()[0]);
-                prepstatement.setString(2, cust.getAddr()[1]);
-                prepstatement.setString(3, cust.getCity());
-                prepstatement.setString(4, cust.getZip());
-                prepstatement.setString(5, cust.getPhone());
-                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
-                prepstatement.setString(7, user);                                          //on Insert, create == update, this value not to be changed in Update function
-                prepstatement.setTimestamp(8, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
-                prepstatement.setString(9, user);                                          //on Insert, create == update
-                //prepstatement.setString(10,cust.getAddr()[0]);
-                //prepstatement.setString(11,cust.getAddr()[1]);
-                //prepstatement.setString(12,cust.getCity());
-                //prepstatement.setString(13,cust.getZip());
-                //prepstatement.setString(14,cust.getPhone());
-                results = prepstatement.executeQuery();
-                while(results.next()){System.out.println(results.getString("address"));
-                                      System.out.println(results.getString("address2"));
-                                      System.out.println(results.getString("cityId"));
-                                      System.out.println(results.getString("postalCode"));
-                                      System.out.println(results.getString("phone"));              
-                }
-            }
-            catch(SQLException e){
-                System.out.println(e.getMessage());
-            }
-            finally{            
-            if(prepstatement != null) prepstatement.close();
-            if(conn != null) conn.close();
-        }
-    }
+    }    
     
     public static boolean Update(Customer cust, String user)throws SQLException{
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("UPDATE customer "
-                    + "SET customerName = ?, addressId = ?, active = ?, lastUpdate = ?, lastUpdateBy = ?;");
+            /*prepstatement = conn.prepareStatement("UPDATE customer, address "
+                    + "SET customer.customerName = ?, customer.addressId = (SELECT addressId FROM address WHERE address LIKE ? AND address2 LIKE ? AND phone LIKE ?), "
+                    + "customer.active = ?, customer.lastUpdate = ?, customer.lastUpdateBy = ?, "
+                    + "address.address = ?, address.address2 = ?, address.cityId = (SELECT cityId FROM city WHERE city = ?), address.postalCode = ?, "
+                    + "address.phone = ?, address.lastUpdate = ?, address.lastUpdateBy = ?;");*/
+            prepstatement = conn.prepareStatement("SELECT * FROM address "
+                    + "WHERE address = ? AND address2 = ? AND cityId = (SELECT cityId FROM city WHERE city = ?) AND postalCode = ? AND phone = ?;");
+
+                    /*"INSERT INTO address "
+                    + "(address, address2, cityId, postalCode, phone, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES "
+                    + "SELECT * FROM (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?) AS temp "
+                    + "WHERE NOT EXISTS(SELECT address, address, cityId, postalCode, phone FROM address "
+                    + "WHERE address = ? AND address2 = ? AND cityId = ? AND postalCode = ? AND phone = ?) LIMIT 1;");*/
+                    //+ "VALUES (?,?,(SELECT cityId FROM city WHERE city = ?),?,?,?,?,?,?);");
+            prepstatement.setString(1, cust.getAddr()[0]);
+            prepstatement.setString(2, cust.getAddr()[1]);
+            prepstatement.setString(3, cust.getCity());
+            prepstatement.setString(4, cust.getZip());
+            prepstatement.setString(5, cust.getPhone());
+            results = prepstatement.executeQuery();
+            if(!results.next()){
+            prepstatement = conn.prepareStatement("UPDATE address AS addr INNER JOIN address AS a ON addr.addressId = a.addressId "
+                    + "SET addr.address = ?, addr.address2 = ?, addr.cityId = (SELECT cityId FROM city WHERE city = ?), addr.postalCode = ?, "
+                    + "addr.phone = ?, addr.lastUpdate = ?, addr.lastUpdateBy = ?;");              //update address            
+            prepstatement.setString(1, cust.getAddr()[0]);
+            prepstatement.setString(2, cust.getAddr()[1]);
+            prepstatement.setString(3, cust.getCity());
+            prepstatement.setString(4, cust.getZip());
+            prepstatement.setString(5, cust.getPhone());            
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(7, user);
+            int rows = prepstatement.executeUpdate();}
+            prepstatement = conn.prepareStatement("UPDATE customer AS cust INNER JOIN customer AS c ON cust.customerId = c.customerId "
+                    + "SET cust.customerName = ?, cust.addressId = (SELECT addressId FROM address WHERE address = ? AND address2 = ? AND phone = ?), "
+                    + "cust.active = ?, cust.lastUpdate = ?, cust.lastUpdateBy = ?;");              //update customer
             prepstatement.setString(1, cust.getName());
-            prepstatement.setInt(2, cust.getAddrID());
-            prepstatement.setBoolean(3, cust.getActive());
-            prepstatement.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(5, user);
-            prepstatement.executeUpdate();
+            prepstatement.setString(2, cust.getAddr()[0]);
+            prepstatement.setString(3, cust.getAddr()[1]);
+            prepstatement.setString(4, cust.getPhone());
+            prepstatement.setBoolean(5, cust.getActive());
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(7, user);
+            int rows = prepstatement.executeUpdate();
             return true;
         }
         catch(SQLException e){
@@ -338,7 +334,7 @@ public class SQLHelper{
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("DELETE FROM customer WHERE customerId = ?;");
             prepstatement.setInt(1, cust.getID());
-            prepstatement.execute();
+            int rows = prepstatement.executeUpdate();
             return true;
         }
         catch(SQLException e){
@@ -353,7 +349,7 @@ public class SQLHelper{
     // </editor-fold>
     
     
-    public static TreeMap GetAppointments(String user) throws SQLException
+    public static TreeMap GetAppointments(String user, LocalDateTime start, LocalDateTime end) throws SQLException
     {
         try{
             map = new TreeMap<>();
@@ -480,11 +476,13 @@ public class SQLHelper{
         try{    
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
+            //prepstatement = conn.prepareStatement("DELETE FROM customer WHERE customerName LIKE *;");
+            //prepstatement.execute();
             //prepstatement = conn.prepareStatement("DELETE FROM address WHERE address = '30 Rockefeller Plaza';");
             //prepstatement.execute();
-            prepstatement = conn.prepareStatement("SELECT * FROM customer;");
+            prepstatement = conn.prepareStatement("SELECT * FROM address;");
             results = prepstatement.executeQuery();
-            while(results.next()){System.out.println(results.getString("customerName"));}
+            while(results.next()){System.out.println(results.getString("addressId") + " " + results.getString("address") + " " + results.getString("phone"));}
             
         }
         catch(SQLException e){System.out.println(e.getMessage());}
