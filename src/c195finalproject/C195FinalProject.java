@@ -240,6 +240,7 @@ public class C195FinalProject extends Application {
             values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});*/
             LocalDateTime startTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1, 0, 0);
             LocalDateTime endTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getMonth().length(LocalDate.now().getYear()%4 == 0), 23, 59);
+            if(startTime.plusDays(7).isAfter(endTime)) endTime = endTime.plusDays(7);
             apptMap = SQLHelper.GetAppointments(curUser, startTime, endTime);
             TextFlow rightText = new TextFlow();
             rightText.setPrefWidth(80);
@@ -393,6 +394,10 @@ public class C195FinalProject extends Application {
         centerSide.getChildren().addAll(lblApptID,lblCustName,lblTitle,lblLoc,lblURL,lblContact,lblType,lblDesc,lblDate,lblStartTime,lblEndTime,
                                         cboxName,cboxType,
                                         txtDesc,txtTitle,txtLoc,txtURL,txtContact,txtDate,txtStartTime,txtEndTime);
+        txtDate.setPromptText(RB.getString("txtDate"));
+        txtStartTime.setPromptText(RB.getString("txtTime"));
+        txtEndTime.setPromptText(RB.getString("txtTime"));
+        
         bottomSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
         bottomSide.setAlignment(Pos.CENTER_LEFT);
         bottomSide.setSpacing(15);
