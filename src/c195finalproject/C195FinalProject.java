@@ -40,6 +40,7 @@ import java.util.ResourceBundle;
 import java.util.TreeMap;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
@@ -80,7 +81,7 @@ public class C195FinalProject extends Application {
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
         //Scene scene = GetLogin();
-        Scene scene = GetAppointments("test");
+        Scene scene = GetCalendar("test");
         primaryStage.setTitle(RB.getString("loginTitle"));
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -151,9 +152,7 @@ public class C195FinalProject extends Application {
         Button btnWeek = new Button();
         Button btnMonth = new Button();
         Button btnExit = new Button();
-        Button btnInsert = new Button();
-        Button btnUpdate = new Button();
-        Button btnDelete = new Button();
+        Button btnEditAppt = new Button();
         Button btnEditCust = new Button();
         Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
         Button[] btnWeekArray = new Button[7];
@@ -161,6 +160,15 @@ public class C195FinalProject extends Application {
         Label lblTimer = new Label();
         Label lblCenterMonth = new Label();
         Label lblCenterWeek = new Label();
+        Label lblApptDescW = new Label();
+        Label lblApptDescM = new Label();
+        
+        Alert altApptDBError = new Alert(AlertType.ERROR); altApptDBError.setContentText("An error occured when retrieving the appointment list.");
+        Alert altApptListEmpty = new Alert(AlertType.ERROR); altApptListEmpty.setContentText("The appointment list is empty.");
+        Alert altApptSoon = new Alert(AlertType.INFORMATION); altApptSoon.setContentText("You have an appointment in the next 15 minutes.");
+        
+        TreeMap<Integer,Appointment> apptMap; //change to <Integer,Appointment>
+        
         
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("hh:mm:ss a");
         ScheduledService<Void> startTimer = new ScheduledService<Void>(){            
@@ -188,6 +196,7 @@ public class C195FinalProject extends Application {
         paneTop.setPadding(new Insets(5,0,10,5));
         btnExit.setText("Exit");
         btnExit.setOnAction(event -> {Platform.exit();});
+        btnExit.setCancelButton(true);
         btnWeek.setText("Week View");
         btnMonth.setText("Month View");
         GridPane.setConstraints(btnWeek,0,0);
@@ -198,9 +207,7 @@ public class C195FinalProject extends Application {
         //end top panel creation
         
         // <editor-fold defaultstate="collapsed" desc="left side creation">
-        btnInsert.setText("Insert Appointment"); btnInsert.setMaxWidth(Double.MAX_VALUE);
-        btnUpdate.setText("Update Appointment"); btnUpdate.setMaxWidth(Double.MAX_VALUE);
-        btnDelete.setText("Delete Appointment"); btnDelete.setMaxWidth(Double.MAX_VALUE);
+        btnEditAppt.setText(RB.getString("btnEditAppt")); btnEditAppt.setMaxWidth(Double.MAX_VALUE);
         btnEditCust.setText(RB.getString("btnEditCust")); btnEditCust.setMaxWidth(Double.MAX_VALUE);
         btnEditCust.setOnAction(event -> 
                                 {altStage = new Stage();
@@ -209,10 +216,17 @@ public class C195FinalProject extends Application {
                                 altStage.setScene(scene);
                                 altStage.show();
                                 });
+        btnEditAppt.setOnAction(event -> {
+                                altStage = new Stage();
+                                altStage.setTitle("Appointment Edits");
+                                Scene scene = EditAppointments(curUser);
+                                altStage.setScene(scene);
+                                altStage.show();
+        });
         leftSide.setAlignment(Pos.CENTER_LEFT);
         leftSide.setSpacing(15);
         leftSide.setPadding(new Insets(0,0,0,0));
-        leftSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete,btnEditCust);
+        leftSide.getChildren().addAll(btnEditAppt,btnEditCust);
         // </editor-fold> 
         //end left side creation        
         
@@ -224,10 +238,20 @@ public class C195FinalProject extends Application {
             TextFlow rightText = new TextFlow();
             Collection<Appointment> values = apptMap.values();
             values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});*/
-            TreeMap<Integer,Customer> apptMap = SQLHelper.GetCustomers();
+            LocalDateTime startTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1, 0, 0);
+            LocalDateTime endTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getMonth().length(LocalDate.now().getYear()%4 == 0), 23, 59);
+            apptMap = SQLHelper.GetAppointments(curUser, startTime, endTime);
             TextFlow rightText = new TextFlow();
-            Collection<Customer> values = apptMap.values();
-            values.forEach(value -> {rightText.getChildren().add(new TextField(value.toString()));});
+            rightText.setPrefWidth(80);
+            Collection<Appointment> values = apptMap.values();
+            values.forEach(value -> {
+                TextField apptText = new TextField(value.toString());
+                apptText.setEditable(false);
+                apptText.setOnMouseReleased(event -> {
+                    lblApptDescW.setText(value.toString());
+                    lblApptDescM.setText(value.toString());
+                });
+                rightText.getChildren().add(apptText);});
             rightSide.setContent(rightText);
         }
         catch(SQLException|NullPointerException e){
@@ -237,12 +261,16 @@ public class C195FinalProject extends Application {
         //end right side creation    
         
         // <editor-fold defaultstate="collapsed" desc="center panel creation">
+        GridPane.setConstraints(lblApptDescW,2,10,5,5);
+        GridPane.setConstraints(lblApptDescM,2,10,5,5);
         GridPane.setConstraints(lblCenterMonth,0,8,2,2);
-        paneCenterMonth.getChildren().add(lblCenterMonth);
-        paneCenterMonth.setGridLinesVisible(true);
+        paneCenterMonth.getChildren().addAll(lblCenterMonth,lblApptDescM);
+        paneCenterMonth.setGridLinesVisible(false);
         GridPane.setConstraints(lblCenterWeek,0,2,2,2);
-        paneCenterWeek.getChildren().add(lblCenterWeek);
-        paneCenterWeek.setGridLinesVisible(true);        
+        paneCenterWeek.getChildren().addAll(lblCenterWeek,lblApptDescW);
+        paneCenterWeek.setGridLinesVisible(false);
+        
+        
         for(int i = 0; i < btnMonthArray.length;i++)
         {
             Button btn = new Button();
@@ -261,8 +289,14 @@ public class C195FinalProject extends Application {
             btn.setOnAction(event -> {lblCenterWeek.setText(btn.getText());});
             paneCenterWeek.getChildren().add(btn);
         }
-        btnMonth.setOnAction(event -> {calPane.setCenter(paneCenterMonth);});
-        btnWeek.setOnAction(event -> {calPane.setCenter(paneCenterWeek);});
+        btnMonth.setOnAction(event -> {
+            calPane.setCenter(paneCenterMonth);
+            lblApptDescM.setText("");
+        });
+        btnWeek.setOnAction(event -> {
+            calPane.setCenter(paneCenterWeek);
+            lblApptDescW.setText("");
+        });
         // </editor-fold> 
         //end center panel creation
         
@@ -290,19 +324,86 @@ public class C195FinalProject extends Application {
         return calScene;
     }
     
-    public Scene GetAppointments(String curUser){
-        
+    public Scene EditAppointments(String curUser){
+        // <editor-fold defaultstate="collapsed" desc="creating form components">
         BorderPane apptPane = new BorderPane();
-        ComboBox apptCBox = new ComboBox();
+        ComboBox cboxName = new ComboBox();
+        ComboBox cboxType = new ComboBox();
+        HBox bottomSide = new HBox();
+        GridPane centerSide = new GridPane();
+        
+        Button btnInsert = new Button();
+        Button btnUpdate = new Button();
+        Button btnDelete = new Button();
+        
+        Label lblApptID = new Label();
+        Label lblCustName = new Label(RB.getString("lblFullName"));
+        Label lblTitle = new Label(RB.getString("lblApptTitle"));
+        Label lblLoc = new Label(RB.getString("lblApptLoc"));
+        Label lblURL = new Label(RB.getString("lblApptURL"));
+        Label lblContact = new Label(RB.getString("lblApptContact"));
+        Label lblType = new Label(RB.getString("lblApptType"));
+        Label lblDesc = new Label(RB.getString("lblApptDesc"));
+        Label lblDate = new Label(RB.getString("lblApptDate"));
+        Label lblStartTime = new Label(RB.getString("lblApptStart"));
+        Label lblEndTime = new Label(RB.getString("lblApptEnd"));
+        
+        TextArea txtDesc = new TextArea();
+        TextField txtTitle = new TextField();
+        TextField txtLoc = new TextField();
+        TextField txtURL = new TextField();
+        TextField txtContact = new TextField();
+        TextField txtDate = new TextField();
+        TextField txtStartTime = new TextField();
+        TextField txtEndTime = new TextField();
+        
         TextFlow apptFlow = new TextFlow();
-        ScrollPane apptList = new ScrollPane();
+        ScrollPane rightSide = new ScrollPane();
         Alert altApptDBError = new Alert(AlertType.ERROR); altApptDBError.setContentText("An error occured when retrieving the appointment list.");
         Alert altApptListEmpty = new Alert(AlertType.ERROR); altApptListEmpty.setContentText("The appointment list is empty.");
         Alert altApptSoon = new Alert(AlertType.INFORMATION); altApptSoon.setContentText("You have an appointment in the next 15 minutes.");
+        TreeMap<Integer,Appointment> apptMap;
+        //</editor-fold>
+        
+        //<editor-fold defaultstate="collapsed" desc="Grid Positions">
+        GridPane.setConstraints(lblApptID,0,0);
+        GridPane.setConstraints(lblCustName,0,1);
+        GridPane.setConstraints(lblTitle,0,2);
+        GridPane.setConstraints(lblLoc,0,3);
+        GridPane.setConstraints(lblURL,0,4);
+        GridPane.setConstraints(lblContact,0,5);
+        GridPane.setConstraints(lblType,0,6);
+        GridPane.setConstraints(lblDesc,0,8);
+        GridPane.setConstraints(lblDate,2,1);
+        GridPane.setConstraints(lblStartTime,2,2);
+        GridPane.setConstraints(lblEndTime,2,3);
+        GridPane.setConstraints(cboxName,1,1);
+        GridPane.setConstraints(txtDesc,1,8,4,3);
+        GridPane.setConstraints(txtTitle,1,2);
+        GridPane.setConstraints(txtLoc,1,3);
+        GridPane.setConstraints(txtURL,1,4);
+        GridPane.setConstraints(txtContact,1,5);
+        GridPane.setConstraints(cboxType,1,6);
+        GridPane.setConstraints(txtDate,3,1);
+        GridPane.setConstraints(txtStartTime,3,2);
+        GridPane.setConstraints(txtEndTime,3,3);
+        //</editor-fold>
+        
+        centerSide.setPadding(new Insets(20,5,5,10));
+        centerSide.getChildren().addAll(lblApptID,lblCustName,lblTitle,lblLoc,lblURL,lblContact,lblType,lblDesc,lblDate,lblStartTime,lblEndTime,
+                                        cboxName,cboxType,
+                                        txtDesc,txtTitle,txtLoc,txtURL,txtContact,txtDate,txtStartTime,txtEndTime);
+        bottomSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
+        bottomSide.setAlignment(Pos.CENTER_LEFT);
+        bottomSide.setSpacing(15);
+        bottomSide.setPadding(new Insets(20,20,20,20));        
+        btnInsert.setText(RB.getString("btnCreateAppt")); btnInsert.setMaxWidth(Double.MAX_VALUE);
+        btnUpdate.setText(RB.getString("btnUpdateAppt")); btnUpdate.setMaxWidth(Double.MAX_VALUE);
+        btnDelete.setText(RB.getString("btnDeleteAppt")); btnDelete.setMaxWidth(Double.MAX_VALUE);
+        
         
         apptPane.setPrefSize(800, 400);
         
-        TreeMap<Integer,Object> apptMap;
         try{
                 LocalDateTime startTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1, 0, 0);
                 LocalDateTime endTime = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getMonth().length(LocalDate.now().getYear()%4 == 0), 23, 59);
@@ -313,14 +414,16 @@ public class C195FinalProject extends Application {
                     nextAppt.setEditable(false);
                     apptFlow.getChildren().add(nextAppt);
                     //apptCBox.getItems().add(value.toString());
-                });                
+                });
         }
         catch(SQLException e){altApptDBError.show();}
-        catch(NullPointerException e){altApptListEmpty.show(); System.out.println("Query returned a null map.");}
+        catch(NullPointerException e){altApptListEmpty.show(); System.out.println("Query returned no appointments.");}  
+        rightSide.setContent(apptFlow);
         
         
-        apptList.setContent(apptFlow);
-        apptPane.setRight(apptList);
+        apptPane.setRight(rightSide);
+        apptPane.setBottom(bottomSide);
+        apptPane.setCenter(centerSide);
         Scene apptScene = new Scene(apptPane);
         return apptScene;
     }
