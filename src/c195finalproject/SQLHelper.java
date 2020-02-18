@@ -143,13 +143,13 @@ public class SQLHelper{
         }
     }  
     
-    public static boolean Delete(Appointment appt) throws SQLException //delete method for appointments
+    public static boolean Delete(Integer apptID) throws SQLException //delete method for appointments
     {
         try{
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("DELETE FROM appointment WHERE appointmentId = ?;");
-            prepstatement.setInt(1, appt.getID());
+            prepstatement.setInt(1, apptID);
             prepstatement.execute();
             return true;
         }
@@ -359,7 +359,7 @@ public class SQLHelper{
                     + "FROM appointment INNER JOIN "
                     + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
                     + "ON appointment.customerId = customer.customerId "
-                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?;);");
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?);");
             prepstatement.setString(1,user);
             results = prepstatement.executeQuery();
             while(results.next()){
