@@ -6,6 +6,8 @@
 package c195finalproject;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 /**
  *
  * @author Mesa
@@ -21,10 +23,10 @@ public class Appointment implements Comparable<Appointment>{
     private String contact;
     private String type;
     private String url;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private ZonedDateTime startTime;
+    private ZonedDateTime endTime;
     
-    public Appointment(Integer apptID, String custName, String title, String desc, String location, String contact, String url, LocalDateTime start, LocalDateTime end){
+    public Appointment(Integer apptID, String custName, String title, String desc, String location, String contact, String type, String url, LocalDateTime start, LocalDateTime end){
         try{
             this.apptId = apptID;
             String[] appt = custName.split(" ");
@@ -34,16 +36,17 @@ public class Appointment implements Comparable<Appointment>{
             this.description = desc;
             this.location = location;
             this.contact = contact;
+            this.type = type;
             this.url = url;
-            this.startTime = start;
-            this.endTime = end;
+            this.startTime = start.atZone(ZoneId.of("UTC"));
+            this.endTime = end.atZone(ZoneId.of("UTC"));
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
         }
     }
     
-    public Appointment(String custName, String title, String desc, String location, String contact, String url, LocalDateTime start, LocalDateTime end){
+    public Appointment(String custName, String title, String desc, String location, String contact, String type, String url, LocalDateTime start, LocalDateTime end){
         try{            
             String[] appt = custName.split(" ");
             this.custFirstName = appt[0];
@@ -52,9 +55,10 @@ public class Appointment implements Comparable<Appointment>{
             this.description = desc;
             this.location = location;
             this.contact = contact;
+            this.type = type;
             this.url = url;
-            this.startTime = start;
-            this.endTime = end;
+            this.startTime = start.atZone(ZoneId.of("UTC"));
+            this.endTime = end.atZone(ZoneId.of("UTC"));
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
@@ -68,7 +72,7 @@ public class Appointment implements Comparable<Appointment>{
     }
     @Override
     public String toString(){
-        return title + System.lineSeparator() + custLastName + " ," + custFirstName;
+        return title + ": " + custLastName + ", " + custFirstName;
     }
     
     // <editor-fold defaultstate="collapsed" desc="Getters">
@@ -82,7 +86,7 @@ public class Appointment implements Comparable<Appointment>{
     public String getContact(){return contact;}
     public String getType(){return type;}
     public String getURL(){return url;}
-    public LocalDateTime getStart(){return startTime;}
-    public LocalDateTime getEnd(){return endTime;}
+    public LocalDateTime getStart(){return startTime.toLocalDateTime();}
+    public LocalDateTime getEnd(){return endTime.toLocalDateTime();}
     // </editor-fold>
 }

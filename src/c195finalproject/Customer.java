@@ -81,6 +81,7 @@ public class Customer implements Comparable<Customer>{
     public String toString(){
         return this.custLastName + ", " + this.custFirstName;
     }
+    // <editor-fold defaultstate="collapsed" desc="Getters">
     public Integer getID(){
         return custID;
     }
@@ -109,4 +110,5 @@ public class Customer implements Comparable<Customer>{
     public String getCountry(){
         return country;
     }
+    // </editor-fold>
 }

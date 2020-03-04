@@ -8,6 +8,7 @@ package c195finalproject;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.Collator;
+import java.time.DateTimeException;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -33,15 +34,19 @@ import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
 import java.time.Month;
+import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.TextStyle;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TextArea;
@@ -86,6 +91,7 @@ public class C195FinalProject extends Application {
         mainStage = primaryStage;
         //Scene scene = GetLogin();
         Scene scene = GetCalendar("test");
+        //try{SQLHelper.PurgeAddr();}catch(SQLException e){} //repurposed to add cities/countries/users if DB is purged
         primaryStage.setTitle(RB.getString("loginTitle"));
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -159,7 +165,7 @@ public class C195FinalProject extends Application {
         Button btnEditAppt = new Button();
         Button btnEditCust = new Button();
         Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
-        Button[] btnWeekArray = new Button[7];
+        Button[] btnWeekArray = new Button[7];        
         
         Label lblTimer = new Label();
         Label lblCenterMonth = new Label();
@@ -171,7 +177,9 @@ public class C195FinalProject extends Application {
         Alert altApptListEmpty = new Alert(AlertType.ERROR); altApptListEmpty.setContentText("The appointment list is empty.");
         Alert altApptSoon = new Alert(AlertType.INFORMATION); altApptSoon.setContentText("You have an appointment in the next 15 minutes.");
         
-        TreeMap<Integer,Appointment> apptMap; //change to <Integer,Appointment>
+        TreeMap<Integer,Appointment> apptMap = new TreeMap<>();
+        DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         
         
         DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("hh:mm:ss a");
@@ -236,7 +244,8 @@ public class C195FinalProject extends Application {
         
         // <editor-fold defaultstate="collaped" desc="right side creation">
         rightSide.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-        rightSide.setPrefWidth(120);
+        rightSide.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        rightSide.setPrefWidth(200);
         try{
            /* TreeMap<Integer,Appointment> apptMap = SQLHelper.GetAppointments(curUser);
             TextFlow rightText = new TextFlow();
@@ -247,11 +256,12 @@ public class C195FinalProject extends Application {
             if(startTime.plusDays(7).isAfter(endTime)) endTime = endTime.plusDays(7);
             apptMap = SQLHelper.GetAppointments(curUser, startTime, endTime);
             TextFlow rightText = new TextFlow();
-            rightText.setPrefWidth(80);
+            rightText.setPrefWidth(180);
             Collection<Appointment> values = apptMap.values();
             values.forEach(value -> {
                 TextField apptText = new TextField(value.toString());
                 apptText.setEditable(false);
+                apptText.setPrefWidth(180);
                 apptText.setOnMouseReleased(event -> {
                     lblApptDescW.setText(value.toString());
                     lblApptDescM.setText(value.toString());
@@ -273,23 +283,30 @@ public class C195FinalProject extends Application {
         paneCenterMonth.setGridLinesVisible(false);
         GridPane.setConstraints(lblCenterWeek,0,2,2,2);
         paneCenterWeek.getChildren().addAll(lblCenterWeek,lblApptDescW);
-        paneCenterWeek.setGridLinesVisible(false);
-        
+        paneCenterWeek.setGridLinesVisible(false);        
         
         for(int i = 0; i < btnMonthArray.length;i++)
         {
             Button btn = new Button();
-            btn.setText(currMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()) + (i + 1));
+            final Long days = (long)i;
+            Long count = apptMap.values().stream().filter(x -> x.getStart().toLocalDate().format(formatDate).matches(ChronoLocalDateTime.from(LocalDateTime.now().plusDays(days)).toLocalDate().format(formatDate))).count();
+            btn.setText(currMonth.getDisplayName(TextStyle.FULL, Locale.getDefault()) + (i + 1) + System.lineSeparator() + count.toString());
             btn.setMaxWidth(Double.MAX_VALUE);
-            GridPane.setConstraints(btn, i % 7, i / 7);
-            btn.setOnAction(event ->{lblCenterMonth.setText(btn.getText());});
+            btn.setAlignment(Pos.CENTER);
+            GridPane.setConstraints(btn, i % 7, i / 7);            
+            btn.setOnAction((ActionEvent event) -> {
+                lblCenterMonth.setText(btn.getText());                
+            });
             paneCenterMonth.getChildren().add(btn);
         }
         for(int i = 0; i < btnWeekArray.length; i++)
         {
             Button btn = new Button();
-            btn.setText(LocalDate.now(ZoneId.systemDefault()).plusDays(i).toString());
+            final Long days = (long)i;
+            Long count = apptMap.values().stream().filter(x -> x.getStart().toLocalDate().format(formatDate).matches(ChronoLocalDateTime.from(LocalDateTime.now().plusDays(days)).toLocalDate().format(formatDate))).count();
+            btn.setText(LocalDate.now(ZoneId.systemDefault()).plusDays(i).toString() + System.lineSeparator() + count.toString());
             btn.setMaxWidth(Double.MAX_VALUE);
+            btn.setAlignment(Pos.CENTER);
             GridPane.setConstraints(btn, i, 0);
             btn.setOnAction(event -> {lblCenterWeek.setText(btn.getText());});
             paneCenterWeek.getChildren().add(btn);
@@ -325,7 +342,7 @@ public class C195FinalProject extends Application {
         calPane.setTop(paneTop);
         calPane.setCenter(paneCenterWeek);
         calPane.setBottom(paneBottom);
-        Scene calScene = new Scene(calPane,800,450);
+        Scene calScene = new Scene(calPane,900,450);
         return calScene;
     }
     
@@ -369,9 +386,13 @@ public class C195FinalProject extends Application {
         Alert altApptSoon = new Alert(AlertType.INFORMATION); altApptSoon.setContentText("You have an appointment in the next 15 minutes.");
         Alert altNullInsert = new Alert(AlertType.ERROR); altNullInsert.setContentText("Please enter a value for all fields.");
         Alert altSelectAppt = new Alert(AlertType.ERROR); altSelectAppt.setContentText("Select an appointment first to make changes.");
+        Alert altInvalidEntry = new Alert(AlertType.ERROR); altInvalidEntry.setContentText("Please enter valid values for all fields.");
+        
         TreeMap<Integer,Appointment> apptMap;
         TreeMap<Integer,Customer> custMap;
         ObservableList<String> listCust = FXCollections.observableArrayList();
+        DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("HH:mm");
+        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         //</editor-fold>
         
         //<editor-fold defaultstate="collapsed" desc="Grid Positions">
@@ -405,7 +426,7 @@ public class C195FinalProject extends Application {
         txtDate.setPromptText(RB.getString("txtDate"));
         txtStartTime.setPromptText(RB.getString("txtTime"));
         txtEndTime.setPromptText(RB.getString("txtTime"));
-        lblApptID.setVisible(false);
+        //lblApptID.setVisible(false);
         cboxName.setItems(new SortedList<>(listCust, Collator.getInstance()));
         cboxType.setItems(FXCollections.observableArrayList("Phone","In-person","Video conference","Teleconference"));
         
@@ -417,7 +438,7 @@ public class C195FinalProject extends Application {
         btnUpdate.setText(RB.getString("btnUpdateAppt")); btnUpdate.setMaxWidth(Double.MAX_VALUE);
         btnDelete.setText(RB.getString("btnDeleteAppt")); btnDelete.setMaxWidth(Double.MAX_VALUE);
         
-        rightSide.setPrefWidth(160);        
+        rightSide.setPrefWidth(200);        
         
         apptPane.setPrefSize(800, 400);
         
@@ -441,9 +462,9 @@ public class C195FinalProject extends Application {
                         txtURL.setText(value.getURL());
                         txtContact.setText(value.getContact());
                         cboxType.getSelectionModel().select(value.getType());
-                        txtDate.setText(value.getStart().toLocalDate().toString());
-                        txtStartTime.setText(value.getStart().toLocalTime().toString());
-                        txtEndTime.setText(value.getEnd().toLocalTime().toString());
+                        txtDate.setText(value.getStart().toLocalDate().format(formatDate));
+                        txtStartTime.setText(value.getStart().toLocalTime().format(formatTime));
+                        txtEndTime.setText(value.getEnd().toLocalTime().format(formatTime));
                         txtDesc.setText(value.getDesc());
                     });
                     apptFlow.getChildren().add(nextAppt);
@@ -461,15 +482,18 @@ public class C195FinalProject extends Application {
                 String[] end = txtEndTime.getText().split(":");
                 LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
                 LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
-                Appointment nextAppt = new Appointment(cboxName.getValue().toString(),txtTitle.getText(),txtDesc.getText(),txtLoc.getText(),txtContact.getText(),txtURL.getText(),startTime,endTime); 
-                if(SQLHelper.Insert(nextAppt, curUser)){altStage.setScene(EditAppointments(curUser));altStage.show();}
+                String[] nameArr = cboxName.getValue().toString().split(",");
+                Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                                                       txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),startTime,endTime); 
+                if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altNullInsert.show();}
+            catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show();}
         });
         btnDelete.setOnAction(event -> {
             try{
-                if(SQLHelper.Delete(Integer.parseInt(lblApptID.getText()))){altStage.setScene(EditAppointments(curUser));altStage.show();}
+                if(SQLHelper.Delete(Integer.parseInt(lblApptID.getText()))){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altSelectAppt.show();}
@@ -479,14 +503,16 @@ public class C195FinalProject extends Application {
                 String[] date = txtDate.getText().split("/");
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
+                String[] nameArr = cboxName.getValue().toString().split(",");
                 LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
                 LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
-                Appointment nextAppt = new Appointment(Integer.parseInt(lblApptID.getText()),cboxName.getValue().toString(),txtTitle.getText(),
-                                                       txtDesc.getText(),txtLoc.getText(),txtContact.getText(),txtURL.getText(),startTime,endTime); 
-                if(SQLHelper.Update(nextAppt, curUser)){altStage.setScene(EditAppointments(curUser));altStage.show();}
+                Appointment nextAppt = new Appointment(Integer.parseInt(lblApptID.getText()),nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),
+                                                       txtDesc.getText(),txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),startTime,endTime); 
+                if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altSelectAppt.show();}
+            catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show();}
         });
         //</editor-fold>
         

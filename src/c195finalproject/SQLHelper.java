@@ -359,12 +359,12 @@ public class SQLHelper{
                     + "FROM appointment INNER JOIN "
                     + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
                     + "ON appointment.customerId = customer.customerId "
-                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName LIKE ?);");
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName = ?);");
             prepstatement.setString(1,user);
             results = prepstatement.executeQuery();
             while(results.next()){
                 Appointment appt = new Appointment(results.getInt("userId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
-                        results.getString("location"), results.getString("contact"),results.getString("url"),
+                        results.getString("location"), results.getString("contact"),results.getString("type"),results.getString("url"),
                         results.getTimestamp("start").toLocalDateTime(),results.getTimestamp("end").toLocalDateTime());
                 map.put(appt.getID(),appt);
             }
@@ -476,10 +476,52 @@ public class SQLHelper{
         try{    
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            //prepstatement = conn.prepareStatement("DELETE FROM customer WHERE customerName LIKE *;");
-            //prepstatement.execute();
-            //prepstatement = conn.prepareStatement("DELETE FROM address WHERE address = '30 Rockefeller Plaza';");
-            //prepstatement.execute();
+            prepstatement = conn.prepareStatement("INSERT INTO country (country, createDate, createdBy, lastUpdate,lastUpdateBy) VALUES"
+                                                + "(?,?,?,?,?),(?,?,?,?,?);");
+            prepstatement.setString(1, "USA");
+            prepstatement.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(3, "test");
+            prepstatement.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(5, "test");
+            prepstatement.setString(6, "England");
+            prepstatement.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(8, "test");
+            prepstatement.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(10, "test");
+            prepstatement.executeUpdate();
+            prepstatement = conn.prepareStatement("INSERT INTO city (city, countryId, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES"
+                                                + "(?,(SELECT countryId FROM country WHERE country = ?),?,?,?,?),"
+                                                + "(?,(SELECT countryId FROM country WHERE country = ?),?,?,?,?),"
+                                                + "(?,(SELECT countryId FROM country WHERE country = ?),?,?,?,?);");
+            prepstatement.setString(1, "Phoenix");
+            prepstatement.setString(2, "USA");
+            prepstatement.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(4, "test");
+            prepstatement.setTimestamp(5, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(6, "test");
+            prepstatement.setString(7, "New York");
+            prepstatement.setString(8, "USA");
+            prepstatement.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(10, "test");
+            prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(12, "test");
+            prepstatement.setString(13, "London");
+            prepstatement.setString(14, "England");
+            prepstatement.setTimestamp(15, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(16, "test");
+            prepstatement.setTimestamp(17, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(18, "test");
+            prepstatement.executeUpdate();
+            prepstatement = conn.prepareStatement("INSERT INTO user (userName, password, active, createDate, createdBy, lastUpdate, lastUpdateBy) VALUES"
+                                                + "(?,?,?,?,?,?,?)");
+            prepstatement.setString(1, "test");
+            prepstatement.setString(2, "test");
+            prepstatement.setBoolean(3, true);
+            prepstatement.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(5, "test");
+            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+            prepstatement.setString(7, "test");
+            prepstatement.executeUpdate();
             prepstatement = conn.prepareStatement("SELECT * FROM address;");
             results = prepstatement.executeQuery();
             while(results.next()){System.out.println(results.getString("addressId") + " " + results.getString("address") + " " + results.getString("phone"));}
