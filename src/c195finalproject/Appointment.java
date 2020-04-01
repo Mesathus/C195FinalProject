@@ -15,6 +15,7 @@ import java.time.ZonedDateTime;
 public class Appointment implements Comparable<Appointment>{
     
     private Integer apptId = null;
+    private Integer custId = null;
     private String custFirstName;
     private String custLastName;
     private String title;
@@ -76,7 +77,8 @@ public class Appointment implements Comparable<Appointment>{
     }
     
     // <editor-fold defaultstate="collapsed" desc="Getters">
-    public Integer getID(){return this.apptId;}
+    public Integer getApptID(){return this.apptId;}
+    public Integer getCustID(){return this.custId;}
     public String getName(){return custFirstName + " " + custLastName;}
     public String getFName(){return custFirstName;}
     public String getLName(){return custLastName;}

@@ -92,23 +92,29 @@ public class SQLHelper{
     // <editor-fold defaultstate="collapsed" desc="Appointment methods">
     public static boolean Insert(Appointment appt, String user) throws SQLException //insert method for appointments
     {
-        try{            
+        try{         
+            int userID = -1, custID = -1;
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("SELECT customer.customerId, user.userId FROM customer, user WHERE userName = ? OR customerName = ?");
-            prepstatement.setString(1,user);
-            prepstatement.setString(2,appt.getName());
+            prepstatement = conn.prepareStatement("SELECT customer.customerId FROM customer WHERE customerName = ?;");
+            prepstatement.setString(1,appt.getName());
             results = prepstatement.executeQuery();
-            if(results == null) throw new NullPointerException();
-            int userID = -1, custID = -1;
+            if(results == null) throw new NullPointerException();            
             if(results.next()) {
                 custID = results.getInt("customerId"); 
+            }
+            results = null;
+            prepstatement = conn.prepareStatement("SELECT user.userId FROM user WHERE userName = ?;");
+            prepstatement.setString(1,user);
+            results = prepstatement.executeQuery();
+            if(results == null) throw new NullPointerException();
+            if(results.next()) {
                 userID = results.getInt("userId");
             }
-            results = null;            
+            results = null;
             prepstatement = conn.prepareStatement("INSERT INTO appointment (customerId, userId, "
                     + "title, description, location, contact, type, url, start, end, createDate, createdBy, lastUpdate, lastUpdateBy) "
-                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    + "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
             prepstatement.setInt(1,custID);
             prepstatement.setInt(2,userID);
             prepstatement.setString(3,appt.getTitle());
@@ -166,16 +172,22 @@ public class SQLHelper{
     public static boolean Update(Appointment appt, String user) throws SQLException //update method for appointments
     {
         try{
+            int userID = -1, custID = -1;
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
-            prepstatement = conn.prepareStatement("SELECT customer.customerId, user.userId FROM customer, user WHERE userName = ? OR customerName = ?");
-            prepstatement.setString(1,user);
-            prepstatement.setString(2,appt.getName());
+            prepstatement = conn.prepareStatement("SELECT customer.customerId FROM customer WHERE customerName = ?;");
+            prepstatement.setString(1,appt.getName());
             results = prepstatement.executeQuery();
-            if(results == null) throw new NullPointerException();
-            int userID = -1, custID = -1;
+            if(results == null) throw new NullPointerException();            
             if(results.next()) {
                 custID = results.getInt("customerId"); 
+            }
+            results = null;
+            prepstatement = conn.prepareStatement("SELECT user.userId FROM user WHERE userName = ?;");
+            prepstatement.setString(1,user);
+            results = prepstatement.executeQuery();
+            if(results == null) throw new NullPointerException();
+            if(results.next()) {
                 userID = results.getInt("userId");
             }
             results = null;
@@ -194,8 +206,8 @@ public class SQLHelper{
             prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd()));
             prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
             prepstatement.setString(12,user);
-            prepstatement.setInt(13, appt.getID());
-            prepstatement.executeUpdate();
+            prepstatement.setInt(13, appt.getApptID());
+            int rows = prepstatement.executeUpdate();
             return true;
         }
         catch(SQLException e){
@@ -359,14 +371,18 @@ public class SQLHelper{
                     + "FROM appointment INNER JOIN "
                     + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
                     + "ON appointment.customerId = customer.customerId "
-                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName = ?);");
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName = ?)"
+                    + "AND appointment.start >= ? "
+                    + "AND appointment.end <= ? ;");
             prepstatement.setString(1,user);
+            prepstatement.setTimestamp(2, Timestamp.valueOf(start));
+            prepstatement.setTimestamp(3, Timestamp.valueOf(end));
             results = prepstatement.executeQuery();
             while(results.next()){
-                Appointment appt = new Appointment(results.getInt("userId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
+                Appointment appt = new Appointment(results.getInt("appointmentId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
                         results.getString("location"), results.getString("contact"),results.getString("type"),results.getString("url"),
                         results.getTimestamp("start").toLocalDateTime(),results.getTimestamp("end").toLocalDateTime());
-                map.put(appt.getID(),appt);
+                map.put(appt.getApptID(),appt);
             }
             return map;
         }
