@@ -42,12 +42,12 @@ public class Logging {
         }
     }
     
-    public static boolean StampLog(String user){
+    public static boolean StampLog(String user, String success){
         try{            
                 currDate = LocalDate.now(ZoneId.of("UTC"));
                 Init();
                 currDateTime = LocalDateTime.now(ZoneId.of("UTC"));                
-                writer.write(user + " " + currDateTime.toString() + System.lineSeparator());
+                writer.write(user + " " + currDateTime.toString() + " UTC " + " Login attempt: " + success + System.lineSeparator());
                 return true;            
         }
         catch(Exception e){

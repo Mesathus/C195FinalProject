@@ -36,22 +36,17 @@ import javafx.util.Duration;
 import java.time.Month;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.TextStyle;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
 
@@ -121,12 +116,13 @@ public class C195FinalProject extends Application {
         btnLogin.setText(RB.getString("login"));
         btnLogin.setOnAction(event -> {
             try{if(txtPass.getText().equals(SQLHelper.GetPass(txtName.getText()).toString()) && (txtName.getText().length() > 0)){ //SQL function to retrieve password, and ensure something was entered
-                   Logging.StampLog(txtName.getText());     //Logging class creates an entry in the daily log
+                   Logging.StampLog(txtName.getText(),"successful");     //Logging class creates an entry in the daily log
                    Scene loadCal = GetCalendar(txtName.getText());
                    mainStage.setScene(loadCal);
                    mainStage.show();
                }
                 else{
+                    Logging.StampLog(txtName.getText(),"failed");
                     loginError.setVisible(true);
                 }
             }            
@@ -170,6 +166,7 @@ public class C195FinalProject extends Application {
         Button btnExit = new Button();
         Button btnEditAppt = new Button();
         Button btnEditCust = new Button();
+        Button btnReports = new Button();
         Button[] btnMonthArray = new Button[currMonth.length(leapYear)];
         Button[] btnWeekArray = new Button[7];        
         
@@ -228,6 +225,7 @@ public class C195FinalProject extends Application {
         // <editor-fold defaultstate="collapsed" desc="left side creation">
         btnEditAppt.setText(RB.getString("btnEditAppt")); btnEditAppt.setMaxWidth(Double.MAX_VALUE);
         btnEditCust.setText(RB.getString("btnEditCust")); btnEditCust.setMaxWidth(Double.MAX_VALUE);
+        btnReports.setText(RB.getString("btnReports")); btnReports.setMaxWidth(Double.MAX_VALUE);
         btnEditCust.setOnAction(event -> //lambda assigning event to the customer edit form button
                                 {altStage = new Stage();
                                 altStage.setTitle("Customer Edits");
@@ -241,7 +239,14 @@ public class C195FinalProject extends Application {
                                 Scene scene = EditAppointments(curUser);
                                 altStage.setScene(scene);
                                 altStage.show();
-        });
+                                });
+        btnReports.setOnAction(event -> 
+                                {altStage = new Stage();
+                                altStage.setTitle("View Reports");
+                                Scene scene = GetReports(curUser);
+                                altStage.setScene(scene);
+                                altStage.show();
+                                });
         leftSide.setAlignment(Pos.CENTER_LEFT);
         leftSide.setSpacing(15);
         leftSide.setPadding(new Insets(0,0,0,0));
@@ -296,7 +301,7 @@ public class C195FinalProject extends Application {
         {
             Button btn = new Button();
             final Long days = (long)i;  //variable converting loop counter to a final to use with .plusDays
-            Long count = apptMap.values()
+            Long count = apptMap.values()  //filters a stream from appointments by a single day to put a count on each calendar button
                     .stream()
                     .filter(x -> x.getStart()
                             .toLocalDate()
@@ -309,17 +314,18 @@ public class C195FinalProject extends Application {
             btn.setAlignment(Pos.CENTER);
             GridPane.setConstraints(btn, i % 7, i / 7);
             Collection<Appointment> values = apptMap.values();
-            btn.setOnAction((ActionEvent event) -> {
+            btn.setOnAction((ActionEvent event) -> {  //button event loads a title for each appointment that day into the right side text flow
                 rightText.getChildren().clear();
                 values.stream().filter(x -> x.getStart()
                             .toLocalDate()
                             .format(formatDate)
-                            .matches(ChronoLocalDateTime.from(LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1, 0, 0).plusDays(days)).toLocalDate().format(formatDate))
+                            .matches(ChronoLocalDateTime.from(LocalDateTime
+                                    .of(LocalDate.now().getYear(),LocalDate.now().getMonth(), 1, 0, 0).plusDays(days)).toLocalDate().format(formatDate))
                 ).forEach((Appointment value) -> {
                     TextField apptText = new TextField(value.toString());
                     apptText.setEditable(false);
                     apptText.setPrefWidth(180);
-                    apptText.setOnMouseReleased((javafx.scene.input.MouseEvent event1) -> {
+                    apptText.setOnMouseReleased((javafx.scene.input.MouseEvent event1) -> {  //button text boxes load more details into the text area in the center panel
                         lblApptDescW.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
                         lblApptDescM.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
                     });
@@ -740,6 +746,28 @@ public class C195FinalProject extends Application {
                                       txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone,txtID,
                                       custList);
         return custScene;
+    }
+    
+    public Scene GetReports(String user)
+    {
+        //<editor-fold defaultstate="collapsed" desc="component creation">
+        BorderPane reportPane = new BorderPane();
+        Scene reportScene = new Scene(reportPane,900,300);
+        VBox leftSide = new VBox();
+        GridPane centerSide = new GridPane();
+        //# appt types by month
+        //schedule for each ocnsultant
+        //one more
+        Button btnTypes = new Button();
+        Button btnSchedule = new Button();
+        
+        
+        //</editor-fold>
+        
+        
+        
+        
+        return reportScene;
     }
     
 }

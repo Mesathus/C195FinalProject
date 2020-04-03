@@ -11,7 +11,6 @@ package c195finalproject;
  */
 public class Customer implements Comparable<Customer>{
     private Integer custID = null;
-    private String custName;
     private String custFirstName;
     private String custLastName;
     private Integer addressID = null;
