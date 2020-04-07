@@ -86,9 +86,8 @@ public class SQLHelper{
     private static TreeMap<Integer,Object> map = null;
     private static TreeMap<Integer,String> cities = null;
     private static TreeMap<Integer,String> countries = null;
-    /*
-        Inserting appointments requires
-    */    
+    
+    
     // <editor-fold defaultstate="collapsed" desc="Appointment methods">
     public static boolean Insert(Appointment appt, String user) throws SQLException //insert method for appointments
     {
@@ -123,8 +122,8 @@ public class SQLHelper{
             prepstatement.setString(6,appt.getContact());
             prepstatement.setString(7,appt.getType());
             prepstatement.setString(8,appt.getURL());
-            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart()));
-            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd()));
+            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart().atZone(ZoneId.of(ZoneId.systemDefault().toString())).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
+            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd().atZone(ZoneId.of(ZoneId.systemDefault().toString())).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));
             prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));  //createDate timestamp
             prepstatement.setString(12, user);                                      //on Insert, create == update, this value not to be changed in Update function
             prepstatement.setTimestamp(13, new Timestamp(System.currentTimeMillis()));  //lastUpdate timestamp
@@ -202,8 +201,8 @@ public class SQLHelper{
             prepstatement.setString(6, appt.getContact());
             prepstatement.setString(7, appt.getType());
             prepstatement.setString(8, appt.getURL());
-            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart()));
-            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd()));
+            prepstatement.setTimestamp(9, Timestamp.valueOf(appt.getStart().atZone(ZoneId.of(ZoneId.systemDefault().toString())).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));  //from WGU code repo
+            prepstatement.setTimestamp(10, Timestamp.valueOf(appt.getEnd().atZone(ZoneId.of(ZoneId.systemDefault().toString())).withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime()));  //from WGU code repo
             prepstatement.setTimestamp(11, new Timestamp(System.currentTimeMillis()));
             prepstatement.setString(12,user);
             prepstatement.setInt(13, appt.getApptID());
@@ -289,6 +288,7 @@ public class SQLHelper{
                     + "customer.active = ?, customer.lastUpdate = ?, customer.lastUpdateBy = ?, "
                     + "address.address = ?, address.address2 = ?, address.cityId = (SELECT cityId FROM city WHERE city = ?), address.postalCode = ?, "
                     + "address.phone = ?, address.lastUpdate = ?, address.lastUpdateBy = ?;");*/
+            
             prepstatement = conn.prepareStatement("SELECT * FROM address "
                     + "WHERE address = ? AND address2 = ? AND cityId = (SELECT cityId FROM city WHERE city = ?) AND postalCode = ? AND phone = ?;");
 
@@ -305,20 +305,22 @@ public class SQLHelper{
             prepstatement.setString(5, cust.getPhone());
             results = prepstatement.executeQuery();
             if(!results.next()){
-            prepstatement = conn.prepareStatement("UPDATE address AS addr INNER JOIN address AS a ON addr.addressId = a.addressId "
-                    + "SET addr.address = ?, addr.address2 = ?, addr.cityId = (SELECT cityId FROM city WHERE city = ?), addr.postalCode = ?, "
-                    + "addr.phone = ?, addr.lastUpdate = ?, addr.lastUpdateBy = ?;");              //update address            
-            prepstatement.setString(1, cust.getAddr()[0]);
-            prepstatement.setString(2, cust.getAddr()[1]);
-            prepstatement.setString(3, cust.getCity());
-            prepstatement.setString(4, cust.getZip());
-            prepstatement.setString(5, cust.getPhone());            
-            prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
-            prepstatement.setString(7, user);
-            int rows = prepstatement.executeUpdate();}
+                prepstatement = conn.prepareStatement("UPDATE address AS addr INNER JOIN address AS a ON addr.addressId = a.addressId "
+                        + "SET addr.address = ?, addr.address2 = ?, addr.cityId = (SELECT cityId FROM city WHERE city = ?), addr.postalCode = ?, "
+                        + "addr.phone = ?, addr.lastUpdate = ?, addr.lastUpdateBy = ? WHERE addr.addressId = ?;");              //update address            
+                prepstatement.setString(1, cust.getAddr()[0]);
+                prepstatement.setString(2, cust.getAddr()[1]);
+                prepstatement.setString(3, cust.getCity());
+                prepstatement.setString(4, cust.getZip());
+                prepstatement.setString(5, cust.getPhone());            
+                prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
+                prepstatement.setString(7, user);
+                prepstatement.setInt(8, cust.getAddrID());
+                int rows = prepstatement.executeUpdate();
+            }
             prepstatement = conn.prepareStatement("UPDATE customer AS cust INNER JOIN customer AS c ON cust.customerId = c.customerId "
                     + "SET cust.customerName = ?, cust.addressId = (SELECT addressId FROM address WHERE address = ? AND address2 = ? AND phone = ?), "
-                    + "cust.active = ?, cust.lastUpdate = ?, cust.lastUpdateBy = ?;");              //update customer
+                    + "cust.active = ?, cust.lastUpdate = ?, cust.lastUpdateBy = ? WHERE cust.customerId = ?;");              //update customer
             prepstatement.setString(1, cust.getName());
             prepstatement.setString(2, cust.getAddr()[0]);
             prepstatement.setString(3, cust.getAddr()[1]);
@@ -326,6 +328,7 @@ public class SQLHelper{
             prepstatement.setBoolean(5, cust.getActive());
             prepstatement.setTimestamp(6, new Timestamp(System.currentTimeMillis()));
             prepstatement.setString(7, user);
+            prepstatement.setInt(8,cust.getID());
             int rows = prepstatement.executeUpdate();
             return true;
         }
@@ -360,7 +363,7 @@ public class SQLHelper{
     }
     // </editor-fold>
     
-    
+    // <editor-fold defaultstate="collapsed" desc="map returning methods"> 
     public static TreeMap GetAppointments(String user, LocalDateTime start, LocalDateTime end) throws SQLException
     {
         try{
@@ -381,7 +384,7 @@ public class SQLHelper{
             while(results.next()){
                 Appointment appt = new Appointment(results.getInt("appointmentId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
                         results.getString("location"), results.getString("contact"),results.getString("type"),results.getString("url"),
-                        results.getTimestamp("start").toLocalDateTime(),results.getTimestamp("end").toLocalDateTime());
+                        results.getTimestamp("start").toLocalDateTime().atZone(ZoneId.of("UTC")),results.getTimestamp("end").toLocalDateTime().atZone(ZoneId.of("UTC")));
                 map.put(appt.getApptID(),appt);
             }
             return map;
@@ -410,8 +413,8 @@ public class SQLHelper{
             results = prepstatement.executeQuery();
             while(results.next()){
                 //int custID, String custName, String add1, String add2, String postCode, String phone, String city, String country
-                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getInt("addressId"),results.getBoolean("active"),
-                results.getString("address"),results.getString("address2"),results.getString("postalCode"),
+                Customer cust =  new Customer(results.getInt("customerId"),results.getString("customerName"),results.getInt("addressId"),
+                results.getString("address"),results.getString("address2"),results.getBoolean("active"),results.getString("postalCode"),
                 results.getString("phone"),results.getString("city"),results.getString("country"));
                 map.put(cust.getID(), cust);
             }
@@ -461,7 +464,9 @@ public class SQLHelper{
             ds = null;
         }
     }
+    // </editor-fold>
     
+    // password method for login form
     public static StringBuilder GetPass(String inputName) throws SQLException
     {
         StringBuilder pass = new StringBuilder();
@@ -488,6 +493,8 @@ public class SQLHelper{
         }
         return pass;
     }
+    
+    // method to repopulate a purged DB with default information
     public static void PurgeAddr() throws SQLException{
         try{    
             ds = DataSource.getInstance();
@@ -551,33 +558,5 @@ public class SQLHelper{
     }
     
 
-/*static class DataSource {
-    private final static String sqlConnect = "jdbc:mysql://3.227.166.251:3306/U062a2";
-    private final static String user = "U062a2";
-    private final static String pass = "53688672962";
-    private final MysqlDataSource myDS = new MysqlDataSource();
-    
-    private DataSource(){
-        myDS.setURL(sqlConnect);
-        myDS.setUser(user);
-        myDS.setPassword(pass);
-    }
-    DataSource getInstance(){
-        if(ds == null) ds = new DataSource();
-        return ds;
-    }
-    public MysqlDataSource getMDS(){
-        return myDS;
-    }    
-}    */
-    
-    /* Code for comparing Int values in streams
-        Iterator<Integer> i1 = num.iterator();
-        Iterator<Integer> i2 = infinite.iterator();        
-        while(i1.hasNext()){
-            Integer num1 = i1.next();
-            Integer num2 = i2.next();
-            if(!num1.equals(num2)){System.out.println(num2);break;}
-        }
-     */
+
 }

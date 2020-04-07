@@ -27,7 +27,7 @@ public class Appointment implements Comparable<Appointment>{
     private ZonedDateTime startTime;
     private ZonedDateTime endTime;
     
-    public Appointment(Integer apptID, String custName, String title, String desc, String location, String contact, String type, String url, LocalDateTime start, LocalDateTime end){
+    public Appointment(Integer apptID, String custName, String title, String desc, String location, String contact, String type, String url, ZonedDateTime start, ZonedDateTime end){
         try{
             this.apptId = apptID;
             String[] appt = custName.split(" ");
@@ -39,15 +39,15 @@ public class Appointment implements Comparable<Appointment>{
             this.contact = contact;
             this.type = type;
             this.url = url;
-            this.startTime = start.atZone(ZoneId.of("UTC"));
-            this.endTime = end.atZone(ZoneId.of("UTC"));
+            this.startTime = start.withZoneSameInstant(ZoneId.of("UTC"));
+            this.endTime = end.withZoneSameInstant(ZoneId.of("UTC"));
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
         }
     }
     
-    public Appointment(String custName, String title, String desc, String location, String contact, String type, String url, LocalDateTime start, LocalDateTime end){
+    public Appointment(String custName, String title, String desc, String location, String contact, String type, String url, ZonedDateTime start, ZonedDateTime end){
         try{            
             String[] appt = custName.split(" ");
             this.custFirstName = appt[0];
@@ -58,8 +58,8 @@ public class Appointment implements Comparable<Appointment>{
             this.contact = contact;
             this.type = type;
             this.url = url;
-            this.startTime = start.atZone(ZoneId.of("UTC"));
-            this.endTime = end.atZone(ZoneId.of("UTC"));
+            this.startTime = start.withZoneSameInstant(ZoneId.of("UTC"));
+            this.endTime = end.withZoneSameInstant(ZoneId.of("UTC"));
         }
         catch(NullPointerException e){
             System.out.println(e.getMessage());
@@ -88,7 +88,7 @@ public class Appointment implements Comparable<Appointment>{
     public String getContact(){return contact;}
     public String getType(){return type;}
     public String getURL(){return url;}
-    public LocalDateTime getStart(){return startTime.toLocalDateTime();}
-    public LocalDateTime getEnd(){return endTime.toLocalDateTime();}
+    public LocalDateTime getStart(){return startTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();}
+    public LocalDateTime getEnd(){return endTime.withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime();}
     // </editor-fold>
 }

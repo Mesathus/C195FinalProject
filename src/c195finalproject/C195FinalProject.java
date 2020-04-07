@@ -46,6 +46,7 @@ import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextFlow;
@@ -82,6 +83,7 @@ public class C195FinalProject extends Application {
     private Stage altStage;    
     private static final Locale MYLOCALE = Locale.getDefault();
     private static final ResourceBundle RB = ResourceBundle.getBundle("c195finalproject/C195properties",MYLOCALE);
+    private static final ZoneId LOCAL = ZoneId.of(ZoneId.systemDefault().toString());
     
     @Override
     public void start(Stage primaryStage) {
@@ -219,6 +221,7 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(btnMonth,1,0);
         GridPane.setConstraints(btnExit,2,0);
         paneTop.getChildren().addAll(btnWeek,btnMonth,btnExit);
+        
         // </editor-fold> 
         //end top panel creation
         
@@ -250,7 +253,7 @@ public class C195FinalProject extends Application {
         leftSide.setAlignment(Pos.CENTER_LEFT);
         leftSide.setSpacing(15);
         leftSide.setPadding(new Insets(0,0,0,0));
-        leftSide.getChildren().addAll(btnEditAppt,btnEditCust);
+        leftSide.getChildren().addAll(btnEditAppt,btnEditCust,btnReports);
         // </editor-fold> 
         //end left side creation        
         
@@ -415,6 +418,7 @@ public class C195FinalProject extends Application {
         ComboBox cboxType = new ComboBox();
         HBox bottomSide = new HBox();
         GridPane centerSide = new GridPane();
+        DatePicker dp = new DatePicker();
         
         Button btnInsert = new Button();
         Button btnUpdate = new Button();
@@ -437,7 +441,7 @@ public class C195FinalProject extends Application {
         TextField txtLoc = new TextField();
         TextField txtURL = new TextField();
         TextField txtContact = new TextField();
-        TextField txtDate = new TextField();
+        //TextField txtDate = new TextField();
         TextField txtStartTime = new TextField();
         TextField txtEndTime = new TextField();
         
@@ -476,16 +480,18 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(txtURL,1,4);
         GridPane.setConstraints(txtContact,1,5);
         GridPane.setConstraints(cboxType,1,6);
-        GridPane.setConstraints(txtDate,3,1);
+        //GridPane.setConstraints(txtDate,3,1);
         GridPane.setConstraints(txtStartTime,3,2);
         GridPane.setConstraints(txtEndTime,3,3);
+        GridPane.setConstraints(dp,3,1);
         //</editor-fold>
         
         centerSide.setPadding(new Insets(20,5,5,10));
         centerSide.getChildren().addAll(lblApptID,lblCustName,lblTitle,lblLoc,lblURL,lblContact,lblType,lblDesc,lblDate,lblStartTime,lblEndTime,
                                         cboxName,cboxType,
-                                        txtDesc,txtTitle,txtLoc,txtURL,txtContact,txtDate,txtStartTime,txtEndTime);
-        txtDate.setPromptText(RB.getString("txtDate"));
+                                        txtDesc,txtTitle,txtLoc,txtURL,txtContact,txtStartTime,txtEndTime,
+                                        dp);
+        //txtDate.setPromptText(RB.getString("txtDate"));
         txtStartTime.setPromptText(RB.getString("txtTime"));
         txtEndTime.setPromptText(RB.getString("txtTime"));
         lblApptID.setVisible(false);
@@ -525,7 +531,8 @@ public class C195FinalProject extends Application {
                         txtURL.setText(value.getURL());
                         txtContact.setText(value.getContact());
                         cboxType.getSelectionModel().select(value.getType());
-                        txtDate.setText(value.getStart().toLocalDate().format(formatDate));
+                        //txtDate.setText(value.getStart().toLocalDate().format(formatDate));
+                        dp.setValue(value.getStart().toLocalDate());
                         txtStartTime.setText(value.getStart().toLocalTime().format(formatTime));
                         txtEndTime.setText(value.getEnd().toLocalTime().format(formatTime));
                         txtDesc.setText(value.getDesc());
@@ -540,14 +547,15 @@ public class C195FinalProject extends Application {
         //<editor-fold defaultstate="collapsed" desc="button event handlers">
         btnInsert.setOnAction(event -> {
             try{
-                String[] date = txtDate.getText().split("/");
+                String[] date = dp.getValue().toString().split("-");
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
-                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
-                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
+                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
+                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
                 String[] nameArr = cboxName.getValue().toString().split(",");
                 Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
-                                                       txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),startTime,endTime); 
+                                                       txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                       startTime.atZone(ZoneId.systemDefault()),endTime.atZone(ZoneId.systemDefault()));
                 if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
@@ -565,14 +573,15 @@ public class C195FinalProject extends Application {
         });
         btnUpdate.setOnAction(event -> {
             try{
-                String[] date = txtDate.getText().split("/");
+                String[] date = dp.getValue().toString().split("-");
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
                 String[] nameArr = cboxName.getValue().toString().split(",");
-                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
-                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[2]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[0]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
+                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
+                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
                 Appointment nextAppt = new Appointment(Integer.parseInt(lblApptID.getText()),nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),
-                                                       txtDesc.getText(),txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),startTime,endTime); 
+                                                       txtDesc.getText(),txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                       startTime.atZone(ZoneId.systemDefault()),endTime.atZone(ZoneId.systemDefault())); 
                 if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
@@ -617,10 +626,12 @@ public class C195FinalProject extends Application {
         TextField txtPostCode = new TextField();
         TextField txtPhone = new TextField();
         TextField txtID = new TextField();
+        TextField txtAddrID = new TextField();
         Alert altEmptyField = new Alert(AlertType.INFORMATION); altEmptyField.setContentText("A value must be entered in all required fields.");
         Alert altDBError = new Alert(AlertType.ERROR); altDBError.setContentText("An error occured when processing your database request.");
         ScrollPane custList = new ScrollPane();
         TextFlow custFlow = new TextFlow();
+        
         // </editor-fold>
         
         //other variable and objects
@@ -647,7 +658,8 @@ public class C195FinalProject extends Application {
                     else activeBox.setValue(RB.getString("inactive"));
                     cityBox.setValue(value.getCity());
                     countryBox.setValue(value.getCountry());
-                    txtID.setText(value.getID().toString());
+                    txtID.setText(value.getID().toString()); 
+                    txtAddrID.setText(value.getAddrID().toString());
                 });
                 custFlow.getChildren().add(nextCust);
             });
@@ -685,6 +697,7 @@ public class C195FinalProject extends Application {
         custList.setPrefWidth(120);
         custList.setContent(custFlow);
         txtID.setVisible(false);
+        txtAddrID.setVisible(false);
         
         //<editor-fold defaultstate="collapsed" desc="Button event handlers">
         btnCreateCust.setOnAction(event -> {
@@ -696,7 +709,7 @@ public class C195FinalProject extends Application {
                                                 txtAddr1.getText() + "," + filler, bool,
                                                 txtPostCode.getText(),txtPhone.getText(),
                                                 cityBox.getValue().toString(),countryBox.getValue().toString());
-                    if(SQLHelper.Insert(cust, curUser)){mainStage.setScene(GetCustomers(curUser)); mainStage.show();}
+                    if(SQLHelper.Insert(cust, curUser)){altStage.setScene(GetCustomers(curUser)); altStage.show();}
                 }
                 catch(NullPointerException|ArrayIndexOutOfBoundsException e){altEmptyField.show();}
                 catch(SQLException e){altDBError.show();}
@@ -706,11 +719,12 @@ public class C195FinalProject extends Application {
                     SQLHelper.PurgeAddr();
                     StringBuilder filler = new StringBuilder(); filler.insert(0,"\u0020"); filler.insert(0,txtAddr2.getText());
                     Boolean bool = activeBox.getValue().equals(RB.getString("active"));
+                    //int custID, String custName, Integer addressID, Boolean active,String add1, String add2, String postCode, String phone, String city, String country
                     Customer cust = new Customer(Integer.parseInt(txtID.getText()),txtFName.getText() + " " + txtLName.getText(),
-                                                txtAddr1.getText() + "," + filler, bool,
+                                                Integer.parseInt(txtAddrID.getText()),txtAddr1.getText(), filler.toString(), bool,
                                                 txtPostCode.getText(),txtPhone.getText(),
                                                 cityBox.getValue().toString(),countryBox.getValue().toString());
-                    if(SQLHelper.Update(cust, curUser)){mainStage.setScene(GetCustomers(curUser)); mainStage.show();}
+                    if(SQLHelper.Update(cust, curUser)){altStage.setScene(GetCustomers(curUser)); altStage.show();}
                 }
                 catch(NullPointerException|ArrayIndexOutOfBoundsException e){altEmptyField.show();}
                 catch(SQLException e){altDBError.show();}
@@ -743,7 +757,7 @@ public class C195FinalProject extends Application {
         
         custPane.getChildren().addAll(cityBox,countryBox,activeBox,btnCreateCust,btnUpdateCust,btnDeleteCust,
                                       lblFName,lblLName,lblAddr1,lblAddr2,lblPostCode,lblActive,lblPhone,lblCity,lblCountry,lblReq,
-                                      txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone,txtID,
+                                      txtFName,txtLName,txtAddr1,txtAddr2,txtPostCode,txtPhone,txtID,txtAddrID,
                                       custList);
         return custScene;
     }
@@ -752,7 +766,7 @@ public class C195FinalProject extends Application {
     {
         //<editor-fold defaultstate="collapsed" desc="component creation">
         BorderPane reportPane = new BorderPane();
-        Scene reportScene = new Scene(reportPane,900,300);
+        Scene reportScene = new Scene(reportPane,900,500);
         VBox leftSide = new VBox();
         GridPane centerSide = new GridPane();
         //# appt types by month
@@ -760,7 +774,7 @@ public class C195FinalProject extends Application {
         //one more
         Button btnTypes = new Button();
         Button btnSchedule = new Button();
-        
+        Button btnOther = new Button();
         
         //</editor-fold>
         
@@ -769,5 +783,7 @@ public class C195FinalProject extends Application {
         
         return reportScene;
     }
+    
+    
     
 }

@@ -22,7 +22,7 @@ public class Customer implements Comparable<Customer>{
     private String city;
     private String country;
     
-    public Customer(int custID, String custName, Integer addressID, Boolean active,String add1, String add2, String postCode, String phone, String city, String country){
+    public Customer(int custID, String custName, Integer addressID, String add1, String add2, Boolean active, String postCode, String phone, String city, String country){
         try{
             this.custID = custID;
             String[] arrName = custName.split(" ");
