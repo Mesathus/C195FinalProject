@@ -7,7 +7,6 @@ package c195finalproject;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.Collator;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import javafx.application.Application;
@@ -38,7 +37,6 @@ import java.time.Month;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.Optional;
@@ -46,9 +44,7 @@ import java.util.ResourceBundle;
 import java.util.TreeMap;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.DatePicker;
@@ -94,8 +90,8 @@ public class C195FinalProject extends Application {
     @Override
     public void start(Stage primaryStage) {
         mainStage = primaryStage;
-        //Scene scene = GetLogin();
-        Scene scene = GetCalendar("test");
+        Scene scene = GetLogin();
+        //Scene scene = GetCalendar("test"); //to skip the login step to expedite testing
         //try{SQLHelper.PurgeAddr();}catch(SQLException e){} //repurposed to add cities/countries/users if DB is purged
         primaryStage.setTitle(RB.getString("loginTitle"));
         primaryStage.setScene(scene);
@@ -459,10 +455,11 @@ public class C195FinalProject extends Application {
         Alert altSelectAppt = new Alert(AlertType.ERROR); altSelectAppt.setContentText("Select an appointment first to make changes.");
         Alert altInvalidEntry = new Alert(AlertType.ERROR); altInvalidEntry.setContentText("Please enter valid values for all fields.");
         Alert altOutsideHours = new Alert(AlertType.WARNING); altOutsideHours.setContentText("Please enter a time during office business hours.");
+        Alert altConflict = new Alert(AlertType.WARNING); altConflict.setContentText("This appointment time conflicts with another appointment.");
+        Alert altTimeOrder = new Alert(AlertType.WARNING); altTimeOrder.setContentText("Your appointment cannot end before it begins.");
         
         ObservableList<Customer> listCust = FXCollections.observableArrayList();
         DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("HH:mm");
-        DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         //</editor-fold>
         
         //<editor-fold defaultstate="collapsed" desc="Grid Positions">
@@ -550,7 +547,6 @@ public class C195FinalProject extends Application {
         //<editor-fold defaultstate="collapsed" desc="button event handlers">
         btnInsert.setOnAction(event -> {
             try{
-                TreeMap<Integer,Appointment> tempMap = SQLHelper.GetAppointments();
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
                 String[] nameArr = cboxName.getValue().toString().split(",");
@@ -558,36 +554,34 @@ public class C195FinalProject extends Application {
                         Integer.parseInt(start[0]),Integer.parseInt(start[1])),ZoneId.systemDefault());
                 ZonedDateTime endTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
                         Integer.parseInt(end[0]),Integer.parseInt(end[1])),ZoneId.systemDefault());
-                Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
-                ZoneId custZone = getZone(cust.get().getCity());
-                
-                Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
-                        && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
-                        && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
-                        && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
-                
-                        
-                if(blnOfficeHours)
-                {
-                    Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
-                                                           txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
-                                                           startTime,endTime);
-                    if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                if(startTime.isBefore(endTime)){
+                    TreeMap<Integer,Appointment> tempMap = SQLHelper.GetAppointments();
+                    Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
+                    ZoneId custZone = getZone(cust.get().getCity());
+
+                    Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
+                            && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
+                            && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
+                            && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
+
+                    Long conflict = tempMap.values().stream().filter(value -> startTime.equals(value.getStart().atZone(ZoneId.systemDefault())) || 
+                                                                          (startTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))) && startTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) ||
+                                                                           endTime.equals(value.getEnd().atZone(ZoneId.systemDefault())) ||
+                                                                          (endTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) && endTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))))
+                                                             .count();
+                    if(blnOfficeHours)
+                    {
+                        if(conflict == 0){
+                            Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                                                                   txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                                   startTime,endTime);
+                            if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                        }
+                        else{altConflict.showAndWait();}
+                    }
+                    else{altOutsideHours.showAndWait();}
                 }
-                else{
-                    System.out.println(startTime);
-                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime());
-                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime());
-                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime()));
-                    System.out.println(endTime);
-                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime());
-                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime());
-                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime()));
-                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY));
-                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY));
-                    System.out.println();
-                    altOutsideHours.showAndWait();
-                }
+                else{altTimeOrder.showAndWait();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altNullInsert.show();}
@@ -603,7 +597,7 @@ public class C195FinalProject extends Application {
             finally{}
         });
         btnUpdate.setOnAction(event -> {
-            try{
+            try{                
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
                 String[] nameArr = cboxName.getValue().toString().split(",");
@@ -611,37 +605,34 @@ public class C195FinalProject extends Application {
                         Integer.parseInt(start[0]),Integer.parseInt(start[1])),ZoneId.systemDefault());
                 ZonedDateTime endTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
                         Integer.parseInt(end[0]),Integer.parseInt(end[1])),ZoneId.systemDefault());
-                Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
-                ZoneId custZone = getZone(cust.get().getCity());
-                
-                Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
-                        && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
-                        && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
-                        && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
-                Boolean blnConflict;
-                
-                
-                if(blnOfficeHours)
-                {
-                    Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
-                                                           txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
-                                                           startTime,endTime);
-                    if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                if(startTime.isBefore(endTime)){
+                    TreeMap<Integer,Appointment> tempMap = SQLHelper.GetAppointments();
+                    Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
+                    ZoneId custZone = getZone(cust.get().getCity());
+
+                    Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
+                            && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
+                            && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
+                            && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);                
+
+                    Long conflict = tempMap.values().stream().filter(value -> startTime.equals(value.getStart().atZone(ZoneId.systemDefault())) || 
+                                                                    (startTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))) && startTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) ||
+                                                                     endTime.equals(value.getEnd().atZone(ZoneId.systemDefault())) ||
+                                                                    (endTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) && endTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))))
+                                                             .count();
+                    if(blnOfficeHours)
+                    {
+                        if(conflict == 0){
+                            Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                                                                   txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                                   startTime,endTime);
+                            if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                        }
+                        else{altConflict.showAndWait();}
+                    }
+                    else{altOutsideHours.showAndWait();}
                 }
-                else{
-                    System.out.println(startTime);
-                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime());
-                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime());
-                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime()));
-                    System.out.println(endTime);
-                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime());
-                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime());
-                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime()));
-                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY));
-                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY));
-                    System.out.println();
-                    altOutsideHours.showAndWait();
-                }
+                else{altTimeOrder.showAndWait();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altSelectAppt.show();}
