@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.Collator;
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -34,16 +35,20 @@ import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
 import javafx.util.Duration;
 import java.time.Month;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.SortedList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.DatePicker;
@@ -83,7 +88,8 @@ public class C195FinalProject extends Application {
     private Stage altStage;    
     private static final Locale MYLOCALE = Locale.getDefault();
     private static final ResourceBundle RB = ResourceBundle.getBundle("c195finalproject/C195properties",MYLOCALE);
-    private static final ZoneId LOCAL = ZoneId.of(ZoneId.systemDefault().toString());
+    private TreeMap<Integer,Appointment> apptMap;
+    private TreeMap<Integer,Customer> custMap;
     
     @Override
     public void start(Stage primaryStage) {
@@ -182,7 +188,6 @@ public class C195FinalProject extends Application {
         Alert altApptListEmpty = new Alert(AlertType.ERROR); altApptListEmpty.setContentText("The appointment list is empty.");
         Alert altApptSoon = new Alert(AlertType.INFORMATION); altApptSoon.setContentText("You have an appointment in the next 15 minutes.");
         
-        TreeMap<Integer,Appointment> apptMap = new TreeMap<>();
         DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("HH:mm");
         DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         
@@ -425,6 +430,7 @@ public class C195FinalProject extends Application {
         Button btnDelete = new Button();
         
         Label lblApptID = new Label();
+        Label lblUserID = new Label();
         Label lblCustName = new Label(RB.getString("lblFullName"));
         Label lblTitle = new Label(RB.getString("lblApptTitle"));
         Label lblLoc = new Label(RB.getString("lblApptLoc"));
@@ -441,7 +447,6 @@ public class C195FinalProject extends Application {
         TextField txtLoc = new TextField();
         TextField txtURL = new TextField();
         TextField txtContact = new TextField();
-        //TextField txtDate = new TextField();
         TextField txtStartTime = new TextField();
         TextField txtEndTime = new TextField();
         
@@ -453,10 +458,9 @@ public class C195FinalProject extends Application {
         Alert altNullInsert = new Alert(AlertType.ERROR); altNullInsert.setContentText("Please enter a value for all fields.");
         Alert altSelectAppt = new Alert(AlertType.ERROR); altSelectAppt.setContentText("Select an appointment first to make changes.");
         Alert altInvalidEntry = new Alert(AlertType.ERROR); altInvalidEntry.setContentText("Please enter valid values for all fields.");
+        Alert altOutsideHours = new Alert(AlertType.WARNING); altOutsideHours.setContentText("Please enter a time during office business hours.");
         
-        TreeMap<Integer,Appointment> apptMap;
-        TreeMap<Integer,Customer> custMap;
-        ObservableList<String> listCust = FXCollections.observableArrayList();
+        ObservableList<Customer> listCust = FXCollections.observableArrayList();
         DateTimeFormatter formatTime = DateTimeFormatter.ofPattern("HH:mm");
         DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         //</editor-fold>
@@ -480,22 +484,21 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(txtURL,1,4);
         GridPane.setConstraints(txtContact,1,5);
         GridPane.setConstraints(cboxType,1,6);
-        //GridPane.setConstraints(txtDate,3,1);
         GridPane.setConstraints(txtStartTime,3,2);
         GridPane.setConstraints(txtEndTime,3,3);
         GridPane.setConstraints(dp,3,1);
         //</editor-fold>
         
         centerSide.setPadding(new Insets(20,5,5,10));
-        centerSide.getChildren().addAll(lblApptID,lblCustName,lblTitle,lblLoc,lblURL,lblContact,lblType,lblDesc,lblDate,lblStartTime,lblEndTime,
+        centerSide.getChildren().addAll(lblApptID,lblCustName,lblTitle,lblLoc,lblURL,lblContact,lblType,lblDesc,lblDate,lblStartTime,lblEndTime,lblUserID,
                                         cboxName,cboxType,
                                         txtDesc,txtTitle,txtLoc,txtURL,txtContact,txtStartTime,txtEndTime,
                                         dp);
-        //txtDate.setPromptText(RB.getString("txtDate"));
         txtStartTime.setPromptText(RB.getString("txtTime"));
         txtEndTime.setPromptText(RB.getString("txtTime"));
         lblApptID.setVisible(false);
-        cboxName.setItems(new SortedList<>(listCust, Collator.getInstance()));
+        //cboxName.setItems(new SortedList<>(listCust, Collator.getInstance()));
+        cboxName.setItems(listCust.sorted());
         cboxType.setItems(FXCollections.observableArrayList("Phone","In-person","Video conference","Teleconference"));
         
         bottomSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
@@ -517,7 +520,7 @@ public class C195FinalProject extends Application {
                 apptMap = SQLHelper.GetAppointments(curUser, monthStart, monthEnd);
                 custMap = SQLHelper.GetCustomers();
                 custMap.values().forEach(value -> {
-                    listCust.add(value.toString());
+                    listCust.add(value);
                 });
                 apptMap.values().forEach(value -> {
                     TextField nextAppt = new TextField(value.toString());
@@ -525,13 +528,13 @@ public class C195FinalProject extends Application {
                     nextAppt.setPrefWidth(180);
                     nextAppt.setOnMouseReleased(event ->{
                         lblApptID.setText(value.getApptID().toString());
+                        lblUserID.setText(value.getUserID().toString());
                         cboxName.getSelectionModel().select(value.getLName() + ", " + value.getFName());
                         txtTitle.setText(value.getTitle());
                         txtLoc.setText(value.getLoc());
                         txtURL.setText(value.getURL());
                         txtContact.setText(value.getContact());
                         cboxType.getSelectionModel().select(value.getType());
-                        //txtDate.setText(value.getStart().toLocalDate().format(formatDate));
                         dp.setValue(value.getStart().toLocalDate());
                         txtStartTime.setText(value.getStart().toLocalTime().format(formatTime));
                         txtEndTime.setText(value.getEnd().toLocalTime().format(formatTime));
@@ -547,16 +550,44 @@ public class C195FinalProject extends Application {
         //<editor-fold defaultstate="collapsed" desc="button event handlers">
         btnInsert.setOnAction(event -> {
             try{
-                String[] date = dp.getValue().toString().split("-");
+                TreeMap<Integer,Appointment> tempMap = SQLHelper.GetAppointments();
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
-                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
-                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
                 String[] nameArr = cboxName.getValue().toString().split(",");
-                Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
-                                                       txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
-                                                       startTime.atZone(ZoneId.systemDefault()),endTime.atZone(ZoneId.systemDefault()));
-                if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                ZonedDateTime startTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
+                        Integer.parseInt(start[0]),Integer.parseInt(start[1])),ZoneId.systemDefault());
+                ZonedDateTime endTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
+                        Integer.parseInt(end[0]),Integer.parseInt(end[1])),ZoneId.systemDefault());
+                Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
+                ZoneId custZone = getZone(cust.get().getCity());
+                
+                Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
+                        && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
+                        && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
+                        && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
+                
+                        
+                if(blnOfficeHours)
+                {
+                    Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                                                           txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                           startTime,endTime);
+                    if(SQLHelper.Insert(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                }
+                else{
+                    System.out.println(startTime);
+                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime());
+                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime());
+                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime()));
+                    System.out.println(endTime);
+                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime());
+                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime());
+                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime()));
+                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY));
+                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY));
+                    System.out.println();
+                    altOutsideHours.showAndWait();
+                }
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altNullInsert.show();}
@@ -573,16 +604,44 @@ public class C195FinalProject extends Application {
         });
         btnUpdate.setOnAction(event -> {
             try{
-                String[] date = dp.getValue().toString().split("-");
                 String[] start = txtStartTime.getText().split(":");
                 String[] end = txtEndTime.getText().split(":");
                 String[] nameArr = cboxName.getValue().toString().split(",");
-                LocalDateTime startTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(start[0]),Integer.parseInt(start[1]));
-                LocalDateTime endTime = LocalDateTime.of(Integer.parseInt(date[0]),Month.of(Integer.parseInt(date[1])),Integer.parseInt(date[2]),Integer.parseInt(end[0]),Integer.parseInt(end[1]));
-                Appointment nextAppt = new Appointment(Integer.parseInt(lblApptID.getText()),nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),
-                                                       txtDesc.getText(),txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
-                                                       startTime.atZone(ZoneId.systemDefault()),endTime.atZone(ZoneId.systemDefault())); 
-                if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                ZonedDateTime startTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
+                        Integer.parseInt(start[0]),Integer.parseInt(start[1])),ZoneId.systemDefault());
+                ZonedDateTime endTime = ZonedDateTime.of(LocalDateTime.of(dp.getValue().getYear(),dp.getValue().getMonth(),dp.getValue().getDayOfMonth(),
+                        Integer.parseInt(end[0]),Integer.parseInt(end[1])),ZoneId.systemDefault());
+                Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
+                ZoneId custZone = getZone(cust.get().getCity());
+                
+                Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
+                        && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
+                        && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
+                        && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
+                Boolean blnConflict;
+                
+                
+                if(blnOfficeHours)
+                {
+                    Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                                                           txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
+                                                           startTime,endTime);
+                    if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
+                }
+                else{
+                    System.out.println(startTime);
+                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime());
+                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime());
+                    System.out.println(startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime()));
+                    System.out.println(endTime);
+                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime());
+                    System.out.println(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime());
+                    System.out.println(endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime()));
+                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY));
+                    System.out.println(!startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY));
+                    System.out.println();
+                    altOutsideHours.showAndWait();
+                }
             }
             catch(SQLException e){System.out.println(e.getMessage());}
             catch(NullPointerException e){altSelectAppt.show();}
@@ -637,7 +696,6 @@ public class C195FinalProject extends Application {
         //other variable and objects
         TreeMap<Integer,TreeMap> CiCo;
         TreeMap<Integer,String> cityMap, countryMap;
-        TreeMap<Integer,Customer> custMap = new TreeMap();
         
         //load customer data
         try{custMap = SQLHelper.GetCustomers();}
@@ -768,22 +826,179 @@ public class C195FinalProject extends Application {
         BorderPane reportPane = new BorderPane();
         Scene reportScene = new Scene(reportPane,900,500);
         VBox leftSide = new VBox();
+        HBox topSide = new HBox();
         GridPane centerSide = new GridPane();
+        ComboBox cboxMulti = new ComboBox();
+        ComboBox cboxMonth = new ComboBox();
+        ComboBox cboxYear = new ComboBox();
+        TextArea centerText = new TextArea();
         //# appt types by month
         //schedule for each ocnsultant
         //one more
         Button btnTypes = new Button();
         Button btnSchedule = new Button();
-        Button btnOther = new Button();
+        Button btnLocation = new Button();
+        Button btnGenerate = new Button();
+        Alert altEmptyField = new Alert(AlertType.ERROR);  altEmptyField.setContentText("Make sure to select a value for all fields.");
+        
+        ObservableList listApptTypes = FXCollections.observableArrayList();//"Phone","In-person","Video conference","Teleconference");
+        ObservableList<String> users = FXCollections.observableArrayList();
+        ObservableList<Integer> years = FXCollections.observableArrayList();
+        ObservableList<String> locations = FXCollections.observableArrayList();
+        
+        try{
+            apptMap = SQLHelper.GetAppointments();
+            custMap = SQLHelper.GetCustomers();            
+            apptMap.values().forEach(value -> {users.add(value.getUser());});
+            apptMap.values().forEach(value -> {years.add(value.getStart().getYear());});
+            apptMap.values().forEach(value -> {listApptTypes.add(value.getType());});
+            custMap.values().forEach(value -> {locations.add(value.getCity());});
+        }
+        catch(SQLException e){
+            System.out.println(e.getMessage());
+        }
+        //</editor-fold>
+        GridPane.setConstraints(cboxMulti, 0, 0);
+        GridPane.setConstraints(centerText, 0, 1);
+        GridPane.setConstraints(cboxMonth, 1, 0);
+        GridPane.setConstraints(cboxYear, 2, 0);
+        GridPane.setConstraints(btnGenerate, 4, 0);
+        
+        //<editor-fold defaultstate="collapsed" desc="left side">
+        leftSide.getChildren().addAll(btnTypes,btnSchedule,btnLocation,btnGenerate);
+        leftSide.setAlignment(Pos.CENTER_LEFT);
+        leftSide.setSpacing(15);
+        leftSide.setPadding(new Insets(0,0,0,0));
+        btnTypes.setAlignment(Pos.CENTER);
+        btnSchedule.setAlignment(Pos.CENTER);
+        btnLocation.setAlignment(Pos.CENTER);
+        btnTypes.setMaxWidth(Double.MAX_VALUE);
+        btnSchedule.setMaxWidth(Double.MAX_VALUE);
+        btnLocation.setMaxWidth(Double.MAX_VALUE);
+        btnGenerate.setMaxWidth(Double.MAX_VALUE);
+        btnTypes.setText("Appointments by Type");
+        btnSchedule.setText("Appointments by Consultant");
+        btnLocation.setText("Customers by Location");
+        btnGenerate.setText("Generate Report");
+        
+        //populate combo box by consultants, or locations
+        //appointment just displays a listing by type
+        //month / year combo boxes to display consultant schedules / location usage by month
+        btnTypes.setOnAction(event -> {
+            try{
+                centerText.clear();
+                cboxMulti.getItems().clear();
+                cboxMonth.getItems().clear();
+                cboxYear.getItems().clear();
+                cboxMulti.getItems().addAll(listApptTypes.stream().distinct().toArray());
+                cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
+                cboxYear.getItems().addAll(years.stream().distinct().toArray());
+                btnGenerate.setOnAction((ActionEvent event1) -> {
+                    //type quantities in a month, apptlist.stream.filter(month).filter(type).count
+                    try{
+                        centerText.clear();
+                        Month m = (Month)cboxMonth.getValue();
+                        final LocalDateTime monthStart = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, 1, 0, 0);
+                        final LocalDateTime monthEnd = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, m.length(LocalDate.now().getYear()%4 == 0), 23, 59);
+                        //apptMap = SQLHelper.GetAppointments();
+                        cboxMulti.getItems().stream().forEach(value -> {
+                            Long count = apptMap.values().stream()
+                                    .filter(appt -> appt.getStart().isAfter(monthStart))
+                                    .filter(appt -> appt.getStart().isBefore(monthEnd))
+                                    .filter(appt -> appt.getType().equals(value)).count();
+                            String type = value.toString();
+                            centerText.appendText(type + ": " + count.toString() + System.lineSeparator());
+                        });
+                    }
+                    //catch(SQLException e){System.out.println(e.getMessage());}
+                    catch(NullPointerException e){altEmptyField.show();}
+                });
+            }
+            catch(NullPointerException e){altEmptyField.show();}
+        });
+        btnSchedule.setOnAction(event -> {
+            try{
+                centerText.clear();
+                cboxMulti.getItems().clear();
+                cboxMonth.getItems().clear();
+                cboxYear.getItems().clear();
+                cboxMulti.getItems().addAll(users.stream().distinct().toArray());
+                cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
+                cboxYear.getItems().addAll(years.stream().distinct().toArray());
+                btnGenerate.setOnAction((ActionEvent event1) -> {
+                    try{
+                        centerText.clear();
+                        Month m = (Month)cboxMonth.getValue();
+                        final LocalDateTime monthStart = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, 1, 0, 0);
+                        final LocalDateTime monthEnd = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, m.length(LocalDate.now().getYear()%4 == 0), 23, 59);
+                        apptMap.values().stream()
+                                .filter(value -> value.getUser().equals(cboxMulti.getValue()))
+                                .filter(value -> value.getStart().isAfter(monthStart))
+                                .filter(value -> value.getStart().isBefore(monthEnd))
+                                .forEach(value -> centerText.appendText(value.toString() + System.lineSeparator()));
+                    }
+                    catch(NullPointerException e){altEmptyField.show();}
+                });
+            }
+            catch(NullPointerException e){altEmptyField.show();}
+        });
+        btnLocation.setOnAction(event -> {
+            try{
+                centerText.clear();
+                cboxMulti.getItems().clear();
+                cboxMonth.getItems().clear();
+                cboxYear.getItems().clear();
+                cboxMulti.getItems().addAll(locations.stream().distinct().toArray());
+                cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
+                cboxYear.getItems().addAll(years.stream().distinct().toArray());
+                btnGenerate.setOnAction((ActionEvent event1) -> {
+                    try{
+                        centerText.clear();
+                        Month m = (Month)cboxMonth.getValue();
+                        final LocalDateTime monthStart = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, 1, 0, 0);
+                        final LocalDateTime monthEnd = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, m.length(LocalDate.now().getYear()%4 == 0), 23, 59);
+                        cboxMulti.getItems().stream().forEach(value -> {
+                            Long count = custMap.values().stream()
+                                    .filter(cust -> cust.getCity().equals(value)).count();
+                            String location = value.toString();
+                            centerText.appendText(location + ": " + count.toString() + " customers" + System.lineSeparator());
+                        });
+                    }
+                    catch(NullPointerException e){altEmptyField.show();}
+                });
+            }
+            catch(NullPointerException e){altEmptyField.show();}
+        });
         
         //</editor-fold>
         
+        centerSide.getChildren().addAll(centerText);
+        centerText.setPrefWidth(550);
+        centerText.setPrefHeight(650);
         
+        topSide.getChildren().addAll(cboxMulti, cboxMonth, cboxYear, btnGenerate);
+        topSide.setAlignment(Pos.CENTER);
+        cboxMulti.setPrefWidth(170);
+        cboxMonth.setPrefWidth(90);
+        cboxYear.setPrefWidth(90);
+        cboxMulti.setMaxWidth(Double.MAX_VALUE);
+        cboxMonth.setMaxWidth(Double.MAX_VALUE);
+        cboxYear.setMaxWidth(Double.MAX_VALUE);
+        
+        reportPane.setLeft(leftSide);
+        reportPane.setCenter(centerSide);
+        reportPane.setTop(topSide);
         
         
         return reportScene;
     }
     
-    
-    
+    public static ZoneId getZone(String city){
+        switch (city){
+            case "Phoenix" : return ZoneId.of("America/Phoenix");
+            case "New York" : return ZoneId.of("America/New_York");
+            case "London" : return ZoneId.of("UTC");
+            default : return ZoneId.systemDefault();
+        }        
+    }
 }

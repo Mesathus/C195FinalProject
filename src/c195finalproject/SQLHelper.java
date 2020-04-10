@@ -373,8 +373,8 @@ public class SQLHelper{
             prepstatement = conn.prepareStatement("SELECT appointment.*, customer.customerName, address.phone "
                     + "FROM appointment INNER JOIN "
                     + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
-                    + "ON appointment.customerId = customer.customerId "
-                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName = ?)"
+                    + "ON appointment.customerId = customer.customerId INNER JOIN user ON appointment.userId = user.userId "
+                    + "WHERE appointment.userId = (SELECT userId FROM user WHERE userName = ?) "
                     + "AND appointment.start >= ? "
                     + "AND appointment.end <= ? ;");
             prepstatement.setString(1,user);
@@ -382,7 +382,36 @@ public class SQLHelper{
             prepstatement.setTimestamp(3, Timestamp.valueOf(end));
             results = prepstatement.executeQuery();
             while(results.next()){
-                Appointment appt = new Appointment(results.getInt("appointmentId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
+                Appointment appt = new Appointment(results.getInt("appointmentId"),results.getInt("userId"),results.getString("customerName"),results.getString("title"),results.getString("description"),
+                        results.getString("location"), results.getString("contact"),results.getString("type"),results.getString("url"),
+                        results.getTimestamp("start").toLocalDateTime().atZone(ZoneId.of("UTC")),results.getTimestamp("end").toLocalDateTime().atZone(ZoneId.of("UTC")));
+                map.put(appt.getApptID(),appt);
+            }
+            return map;
+        }
+        catch(SQLException e){System.out.println(e.getMessage());return null;}
+        finally{
+            if(results != null) results.close();
+            if(prepstatement != null) prepstatement.close();
+            if(conn != null) conn.close();
+            ds = null;
+        }
+    }
+    
+    public static TreeMap GetAppointments() throws SQLException
+    {
+        try{
+            map = new TreeMap<>();
+            ds = DataSource.getInstance();
+            conn = ds.getMDS().getConnection();
+            prepstatement = conn.prepareStatement("SELECT appointment.*, customer.customerName, address.phone, user.userName "
+                    + "FROM appointment INNER JOIN "
+                    + "(customer INNER JOIN address ON customer.addressId = address.addressId) "
+                    + "ON appointment.customerId = customer.customerId INNER JOIN user ON appointment.userId = user.userId;");
+            results = prepstatement.executeQuery();
+            while(results.next()){
+                Appointment appt = new Appointment(results.getInt("appointmentId"),results.getInt("userId"),results.getString("userName"),
+                        results.getString("customerName"),results.getString("title"),results.getString("description"),
                         results.getString("location"), results.getString("contact"),results.getString("type"),results.getString("url"),
                         results.getTimestamp("start").toLocalDateTime().atZone(ZoneId.of("UTC")),results.getTimestamp("end").toLocalDateTime().atZone(ZoneId.of("UTC")));
                 map.put(appt.getApptID(),appt);

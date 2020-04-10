@@ -16,8 +16,10 @@ public class Appointment implements Comparable<Appointment>{
     
     private Integer apptId = null;
     private Integer custId = null;
+    private Integer userId = null;
     private String custFirstName;
     private String custLastName;
+    private String userName;
     private String title;
     private String description;
     private String location;
@@ -27,12 +29,35 @@ public class Appointment implements Comparable<Appointment>{
     private ZonedDateTime startTime;
     private ZonedDateTime endTime;
     
-    public Appointment(Integer apptID, String custName, String title, String desc, String location, String contact, String type, String url, ZonedDateTime start, ZonedDateTime end){
+    public Appointment(Integer apptID, Integer userID, String custName, String title, String desc, String location, String contact, String type, String url, ZonedDateTime start, ZonedDateTime end){
         try{
             this.apptId = apptID;
+            this.userId = userID;
             String[] appt = custName.split(" ");
             this.custFirstName = appt[0];
             this.custLastName = appt[1];
+            this.title = title;
+            this.description = desc;
+            this.location = location;
+            this.contact = contact;
+            this.type = type;
+            this.url = url;
+            this.startTime = start.withZoneSameInstant(ZoneId.of("UTC"));
+            this.endTime = end.withZoneSameInstant(ZoneId.of("UTC"));
+        }
+        catch(NullPointerException e){
+            System.out.println(e.getMessage());
+        }
+    }
+    
+    public Appointment(Integer apptID, Integer userID, String userName, String custName, String title, String desc, String location, String contact, String type, String url, ZonedDateTime start, ZonedDateTime end){
+        try{
+            this.apptId = apptID;
+            this.userId = userID;
+            String[] appt = custName.split(" ");
+            this.custFirstName = appt[0];
+            this.custLastName = appt[1];
+            this.userName = userName;
             this.title = title;
             this.description = desc;
             this.location = location;
@@ -79,9 +104,11 @@ public class Appointment implements Comparable<Appointment>{
     // <editor-fold defaultstate="collapsed" desc="Getters">
     public Integer getApptID(){return this.apptId;}
     public Integer getCustID(){return this.custId;}
+    public Integer getUserID(){return this.userId;}
     public String getName(){return custFirstName + " " + custLastName;}
     public String getFName(){return custFirstName;}
     public String getLName(){return custLastName;}
+    public String getUser(){return this.userName;}
     public String getTitle(){return title;}
     public String getDesc(){return description;}
     public String getLoc(){return location;}
