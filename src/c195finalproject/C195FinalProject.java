@@ -639,8 +639,7 @@ public class C195FinalProject extends Application {
             catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show();}
             finally{}
         });
-        //</editor-fold>
-        
+        //</editor-fold>        
         
         apptPane.setRight(rightSide);
         apptPane.setBottom(bottomSide);
@@ -978,8 +977,7 @@ public class C195FinalProject extends Application {
         
         reportPane.setLeft(leftSide);
         reportPane.setCenter(centerSide);
-        reportPane.setTop(topSide);
-        
+        reportPane.setTop(topSide);        
         
         return reportScene;
     }
