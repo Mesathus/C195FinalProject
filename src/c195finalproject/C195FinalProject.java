@@ -622,11 +622,13 @@ public class C195FinalProject extends Application {
                             && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                             && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);                
 
-                    Long conflict = tempMap.values().stream().filter(value -> startTime.equals(value.getStart().atZone(ZoneId.systemDefault())) || 
+                    Long conflict = tempMap.values().stream().filter(value -> 
+                                                                    (startTime.equals(value.getStart().atZone(ZoneId.systemDefault())) && !endTime.equals(value.getEnd().atZone(ZoneId.systemDefault()))) || 
                                                                     (startTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))) && startTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) ||
-                                                                     endTime.equals(value.getEnd().atZone(ZoneId.systemDefault())) ||
+                                                                    (endTime.equals(value.getEnd().atZone(ZoneId.systemDefault())) && !startTime.equals(value.getStart().atZone(ZoneId.systemDefault()))) ||
                                                                     (endTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) && endTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))))
                                                              .count();
+                    
                     if(blnOfficeHours)
                     {
                         if(conflict == 0){
