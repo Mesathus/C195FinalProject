@@ -1,0 +1,6 @@
+test 2020-04-15T23:33:00.148 UTC  Login attempt: successful
+test 2020-04-15T23:34:24.606 UTC  Login attempt: failed
+test 2020-04-15T23:34:26.894 UTC  Login attempt: successful
+test 2020-04-15T23:42:39.166 UTC  Login attempt: successful
+test 2020-04-15T23:43:34.881 UTC  Login attempt: successful
+test 2020-04-15T23:44:52.675 UTC  Login attempt: successful

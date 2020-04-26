@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package c195finalproject;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 /**
  *
- * @author labassist
+ * @author Mesa
  */
 public class DataSource {
     private static final String sqlConnect = "jdbc:mysql://3.227.166.251:3306/U062a2";

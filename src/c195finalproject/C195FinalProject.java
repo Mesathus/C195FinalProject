@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package c195finalproject;
 
 import java.io.IOException;
@@ -42,6 +38,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -75,7 +72,6 @@ Tasks:  Log-in form in FX, localize login and error control messages into 2+ lan
             --Format for reports? .txt .docx .xlsx
             --Appointment types: Physical, VoIP, Phone
         Log for user logins w/ timestamps
-
 */
 public class C195FinalProject extends Application {
     
@@ -320,6 +316,8 @@ public class C195FinalProject extends Application {
             Collection<Appointment> values = apptMap.values();
             btn.setOnAction((ActionEvent event) -> {  //button event loads a title for each appointment that day into the right side text flow
                 rightText.getChildren().clear();
+                lblApptDescW.setText("");
+                lblApptDescM.setText("");
                 values.stream().filter(x -> x.getStart()
                             .toLocalDate()
                             .format(formatDate)
@@ -330,12 +328,13 @@ public class C195FinalProject extends Application {
                     apptText.setEditable(false);
                     apptText.setPrefWidth(180);
                     apptText.setOnMouseReleased((javafx.scene.input.MouseEvent event1) -> {  //button text boxes load more details into the text area in the center panel
-                        lblApptDescW.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
-                        lblApptDescM.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
+                        lblApptDescW.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc() + System.lineSeparator() + 
+                                             "Appointment begins at: " + value.getStart().toLocalTime() + System.lineSeparator() + "Appointment ends at: "+ value.getEnd().toLocalTime());
+                        lblApptDescM.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc() + System.lineSeparator() + 
+                                             "Appointment begins at: " + value.getStart().toLocalTime() + System.lineSeparator() + "Appointment ends at: "+ value.getEnd().toLocalTime());
                     });
                     rightText.getChildren().add(apptText);
-                });
-                //lblCenterMonth.setText(btn.getText());                
+                });              
             });
             paneCenterMonth.getChildren().add(btn);
         }
@@ -359,6 +358,8 @@ public class C195FinalProject extends Application {
             Collection<Appointment> values = apptMap.values();
             btn.setOnAction((ActionEvent event) -> {
                 rightText.getChildren().clear();
+                lblApptDescW.setText("");
+                lblApptDescM.setText("");
                 values.stream().filter(x -> x.getStart()
                             .toLocalDate()
                             .format(formatDate)
@@ -368,22 +369,27 @@ public class C195FinalProject extends Application {
                     apptText.setEditable(false);
                     apptText.setPrefWidth(180);
                     apptText.setOnMouseReleased((javafx.scene.input.MouseEvent event1) -> {
-                        lblApptDescW.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
-                        lblApptDescM.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc());
+                        lblApptDescW.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc()+ System.lineSeparator() + 
+                                             "Appointment begins at: " + value.getStart().toLocalTime() + System.lineSeparator() + "Appointment ends at: "+ value.getEnd().toLocalTime());
+                        lblApptDescM.setText(value.getTitle() + System.lineSeparator() + value.getName() + System.lineSeparator() + value.getDesc()+ System.lineSeparator() + 
+                                             "Appointment begins at: " + value.getStart().toLocalTime() + System.lineSeparator() + "Appointment ends at: "+ value.getEnd().toLocalTime());
                     });
                     rightText.getChildren().add(apptText);
-                });
-                //lblCenterMonth.setText(btn.getText());                
+                });             
             });
             paneCenterWeek.getChildren().add(btn);
         }
         btnMonth.setOnAction(event -> {
             calPane.setCenter(paneCenterMonth);
+            rightText.getChildren().clear();
             lblApptDescM.setText("");
+            lblApptDescW.setText("");
         });
         btnWeek.setOnAction(event -> {
             calPane.setCenter(paneCenterWeek);
+            rightText.getChildren().clear();
             lblApptDescW.setText("");
+            lblApptDescM.setText("");
         });
         // </editor-fold> 
         //end center panel creation
@@ -493,9 +499,8 @@ public class C195FinalProject extends Application {
                                         dp);
         txtStartTime.setPromptText(RB.getString("txtTime"));
         txtEndTime.setPromptText(RB.getString("txtTime"));
-        lblApptID.setVisible(false);
-        //cboxName.setItems(new SortedList<>(listCust, Collator.getInstance()));
-        cboxName.setItems(listCust.sorted());
+        lblApptID.setVisible(false); //hide the appointment ID, but retain for use with update/delete functions
+        cboxName.setItems(listCust.sorted());  //populate the customer list
         cboxType.setItems(FXCollections.observableArrayList("Phone","In-person","Video conference","Teleconference"));
         
         bottomSide.getChildren().addAll(btnInsert,btnUpdate,btnDelete);
@@ -513,13 +518,15 @@ public class C195FinalProject extends Application {
         
         try{
                 LocalDateTime monthStart = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1, 0, 0);
+                //monthEnd adds 7 days to what it fetches so a week can be populated even at the end of the month
+                //for example if the calendar is launched on April 30th, we can still view 7 days out, putting us into May
                 LocalDateTime monthEnd = LocalDateTime.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), LocalDate.now().getMonth().length(LocalDate.now().getYear()%4 == 0), 23, 59).plusDays(7);
                 apptMap = SQLHelper.GetAppointments(curUser, monthStart, monthEnd);
                 custMap = SQLHelper.GetCustomers();
                 custMap.values().forEach(value -> {
                     listCust.add(value);
                 });
-                apptMap.values().forEach(value -> {
+                apptMap.values().forEach(value -> {  //load the text flow with clickable appointments to fill fields for easy updates
                     TextField nextAppt = new TextField(value.toString());
                     nextAppt.setEditable(false);
                     nextAppt.setPrefWidth(180);
@@ -558,12 +565,12 @@ public class C195FinalProject extends Application {
                     TreeMap<Integer,Appointment> tempMap = SQLHelper.GetAppointments();
                     Optional<Customer> cust = custMap.values().stream().filter(value -> value.getName().equals(nameArr[1].trim() + " " + nameArr[0].trim())).findFirst();
                     ZoneId custZone = getZone(cust.get().getCity());
-
+                    //boolean to check if entered time is within office business hours
                     Boolean blnOfficeHours = startTime.withZoneSameInstant(custZone).toLocalTime().isAfter(ZonedDateTime.of(LocalDate.now(),LocalTime.of(8, 59),custZone).toLocalTime())
                             && endTime.withZoneSameInstant(custZone).toLocalTime().isBefore(ZonedDateTime.of(LocalDate.now(),LocalTime.of(17, 1),custZone).toLocalTime())
                             && !startTime.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                             && !startTime.getDayOfWeek().equals(DayOfWeek.SUNDAY);
-
+                    //check if an appointment is scheduled suring the same time
                     Long conflict = tempMap.values().stream().filter(value -> startTime.equals(value.getStart().atZone(ZoneId.systemDefault())) || 
                                                                           (startTime.isAfter(value.getStart().atZone(ZoneId.systemDefault()))) && startTime.isBefore(value.getEnd().atZone(ZoneId.systemDefault())) ||
                                                                            endTime.equals(value.getEnd().atZone(ZoneId.systemDefault())) ||
@@ -584,8 +591,8 @@ public class C195FinalProject extends Application {
                 else{altTimeOrder.showAndWait();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
-            catch(NullPointerException e){altNullInsert.show();}
-            catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show();}
+            catch(NullPointerException e){System.out.println(e.getMessage());}//altNullInsert.show();}
+            catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show(); e.printStackTrace();}
             finally{}
         });
         btnDelete.setOnAction(event -> {
@@ -623,7 +630,7 @@ public class C195FinalProject extends Application {
                     if(blnOfficeHours)
                     {
                         if(conflict == 0){
-                            Appointment nextAppt = new Appointment(nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
+                            Appointment nextAppt = new Appointment(Integer.parseInt(lblApptID.getText()),Integer.parseInt(lblUserID.getText()),nameArr[1].trim() + " " + nameArr[0].trim(),txtTitle.getText(),txtDesc.getText(),
                                                                    txtLoc.getText(),txtContact.getText(),cboxType.getValue().toString(),txtURL.getText(),
                                                                    startTime,endTime);
                             if(SQLHelper.Update(nextAppt, curUser)){mainStage.setScene(GetCalendar(curUser));mainStage.show();altStage.setScene(EditAppointments(curUser));altStage.show();}
@@ -635,7 +642,7 @@ public class C195FinalProject extends Application {
                 else{altTimeOrder.showAndWait();}
             }
             catch(SQLException e){System.out.println(e.getMessage());}
-            catch(NullPointerException e){altSelectAppt.show();}
+            catch(NullPointerException e){e.printStackTrace();}//altSelectAppt.show();}
             catch(IllegalArgumentException|ArrayIndexOutOfBoundsException|DateTimeException e){altInvalidEntry.show();}
             finally{}
         });
@@ -685,7 +692,7 @@ public class C195FinalProject extends Application {
         
         //other variable and objects
         TreeMap<Integer,TreeMap> CiCo;
-        TreeMap<Integer,String> cityMap, countryMap;
+        TreeMap<Integer,String[]> cityMap, countryMap;
         
         //load customer data
         try{custMap = SQLHelper.GetCustomers();}
@@ -714,8 +721,8 @@ public class C195FinalProject extends Application {
         }
         
         // <editor-fold defaultstate="collapsed" desc="setting grid positions">
-        GridPane.setConstraints(cityBox,4,3);
-        GridPane.setConstraints(countryBox,4,4);
+        GridPane.setConstraints(countryBox,4,3);
+        GridPane.setConstraints(cityBox,4,4);
         GridPane.setConstraints(activeBox,4,0);
         GridPane.setConstraints(btnCreateCust,0,6);
         GridPane.setConstraints(btnUpdateCust,1,6);
@@ -727,8 +734,8 @@ public class C195FinalProject extends Application {
         GridPane.setConstraints(lblPostCode,0,4);
         GridPane.setConstraints(lblActive,3,0);
         GridPane.setConstraints(lblPhone,3,2);
-        GridPane.setConstraints(lblCity,3,3);
-        GridPane.setConstraints(lblCountry,3,4);
+        GridPane.setConstraints(lblCountry,3,3);
+        GridPane.setConstraints(lblCity,3,4);
         GridPane.setConstraints(lblReq,0,5,4,1);
         GridPane.setConstraints(txtFName,1,0);
         GridPane.setConstraints(txtLName,1,1);
@@ -785,7 +792,7 @@ public class C195FinalProject extends Application {
                                                 txtAddr1.getText() + "," + filler, bool,
                                                 txtPostCode.getText(),txtPhone.getText(),
                                                 cityBox.getValue().toString(),countryBox.getValue().toString());
-                    if(SQLHelper.Delete(cust)){mainStage.setScene(GetCustomers(curUser)); mainStage.show();}
+                    if(SQLHelper.Delete(cust)){altStage.setScene(GetCustomers(curUser)); altStage.show();}
                 }
                 catch(NullPointerException|ArrayIndexOutOfBoundsException e){altEmptyField.show();}
                 catch(SQLException e){altDBError.show();}
@@ -793,14 +800,23 @@ public class C195FinalProject extends Application {
         //</editor-fold>
         
         try{
-            CiCo = SQLHelper.GetCiCo();
-            cityMap = CiCo.get(0);
-            countryMap = CiCo.get(1);
-            cityMap.values().forEach(value -> {cityBox.getItems().add(value);});
-            countryMap.values().forEach(value -> {countryBox.getItems().add(value);});
+            cityMap = SQLHelper.GetCiCo();
+            cityMap.values().forEach(value -> {
+                if(!countryBox.getItems().contains(value[2])) countryBox.getItems().add(value[2]);
+                });
+            countryBox.getSelectionModel().selectedItemProperty().addListener((ObservableValue o, Object obj1, Object obj2) -> {
+                cityBox.getItems().clear();
+                cityMap.values().stream()
+                        .filter(value -> value[2].equals(countryBox.getValue()))
+                        .forEach(value -> cityBox.getItems().add(value[0]));
+            });
         }
         catch(SQLException e){
             System.out.println("An error occured retrieving the city/country lists.");
+            e.printStackTrace();
+        }
+        catch(Exception e){
+            e.printStackTrace();
         }
         
         custPane.getChildren().addAll(cityBox,countryBox,activeBox,btnCreateCust,btnUpdateCust,btnDeleteCust,
@@ -810,8 +826,7 @@ public class C195FinalProject extends Application {
         return custScene;
     }
     
-    public Scene GetReports(String user)
-    {
+    public Scene GetReports(String user){
         //<editor-fold defaultstate="collapsed" desc="component creation">
         BorderPane reportPane = new BorderPane();
         Scene reportScene = new Scene(reportPane,900,500);
@@ -835,6 +850,8 @@ public class C195FinalProject extends Application {
         ObservableList<String> users = FXCollections.observableArrayList();
         ObservableList<Integer> years = FXCollections.observableArrayList();
         ObservableList<String> locations = FXCollections.observableArrayList();
+        
+        cboxMulti.setVisible(false);
         
         try{
             apptMap = SQLHelper.GetAppointments();
@@ -871,26 +888,24 @@ public class C195FinalProject extends Application {
         btnLocation.setText("Customers by Location");
         btnGenerate.setText("Generate Report");
         
-        //populate combo box by consultants, or locations
-        //appointment just displays a listing by type
-        //month / year combo boxes to display consultant schedules / location usage by month
         btnTypes.setOnAction(event -> {
             try{
                 centerText.clear();
                 cboxMulti.getItems().clear();
                 cboxMonth.getItems().clear();
                 cboxYear.getItems().clear();
+                cboxMulti.setVisible(false); 
+                cboxMonth.setVisible(true);
+                cboxYear.setVisible(true);
                 cboxMulti.getItems().addAll(listApptTypes.stream().distinct().toArray());
                 cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
                 cboxYear.getItems().addAll(years.stream().distinct().toArray());
                 btnGenerate.setOnAction((ActionEvent event1) -> {
-                    //type quantities in a month, apptlist.stream.filter(month).filter(type).count
                     try{
                         centerText.clear();
                         Month m = (Month)cboxMonth.getValue();
                         final LocalDateTime monthStart = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, 1, 0, 0);
                         final LocalDateTime monthEnd = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, m.length(LocalDate.now().getYear()%4 == 0), 23, 59);
-                        //apptMap = SQLHelper.GetAppointments();
                         cboxMulti.getItems().stream().forEach(value -> {
                             Long count = apptMap.values().stream()
                                     .filter(appt -> appt.getStart().isAfter(monthStart))
@@ -900,7 +915,6 @@ public class C195FinalProject extends Application {
                             centerText.appendText(type + ": " + count.toString() + System.lineSeparator());
                         });
                     }
-                    //catch(SQLException e){System.out.println(e.getMessage());}
                     catch(NullPointerException e){altEmptyField.show();}
                 });
             }
@@ -912,6 +926,9 @@ public class C195FinalProject extends Application {
                 cboxMulti.getItems().clear();
                 cboxMonth.getItems().clear();
                 cboxYear.getItems().clear();
+                cboxMulti.setVisible(true);                
+                cboxMonth.setVisible(true);
+                cboxYear.setVisible(true);
                 cboxMulti.getItems().addAll(users.stream().distinct().toArray());
                 cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
                 cboxYear.getItems().addAll(years.stream().distinct().toArray());
@@ -938,15 +955,15 @@ public class C195FinalProject extends Application {
                 cboxMulti.getItems().clear();
                 cboxMonth.getItems().clear();
                 cboxYear.getItems().clear();
+                cboxMulti.setVisible(false);
+                cboxMonth.setVisible(false);
+                cboxYear.setVisible(false);
                 cboxMulti.getItems().addAll(locations.stream().distinct().toArray());
                 cboxMonth.setItems(FXCollections.observableArrayList(Month.values()));
                 cboxYear.getItems().addAll(years.stream().distinct().toArray());
                 btnGenerate.setOnAction((ActionEvent event1) -> {
                     try{
                         centerText.clear();
-                        Month m = (Month)cboxMonth.getValue();
-                        final LocalDateTime monthStart = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, 1, 0, 0);
-                        final LocalDateTime monthEnd = LocalDateTime.of(Integer.parseInt(cboxYear.getValue().toString()), m, m.length(LocalDate.now().getYear()%4 == 0), 23, 59);
                         cboxMulti.getItems().stream().forEach(value -> {
                             Long count = custMap.values().stream()
                                     .filter(cust -> cust.getCity().equals(value)).count();
@@ -982,7 +999,7 @@ public class C195FinalProject extends Application {
         return reportScene;
     }
     
-    public static ZoneId getZone(String city){
+    public static ZoneId getZone(String city){ //method can be customized with additional time zones as cities are added to DB
         switch (city){
             case "Phoenix" : return ZoneId.of("America/Phoenix");
             case "New York" : return ZoneId.of("America/New_York");

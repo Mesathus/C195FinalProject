@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package c195finalproject;
 import java.sql.*;
 import java.time.*;
@@ -13,6 +9,8 @@ import java.util.TreeMap;
  */
 
 /**
+ * Helper class to manage DB connections
+ * 
  * Table layouts
  * city
  *      cityId INT 10
@@ -84,8 +82,8 @@ public class SQLHelper{
     private static ResultSet results = null;
     private LocalDateTime currDateTime;
     private static TreeMap<Integer,Object> map = null;
-    private static TreeMap<Integer,String> cities = null;
-    private static TreeMap<Integer,String> countries = null;
+    private static TreeMap<Integer,String[]> cities = null;
+    //private static TreeMap<Integer,String> countries = null;
     
     
     // <editor-fold defaultstate="collapsed" desc="Appointment methods">
@@ -464,7 +462,6 @@ public class SQLHelper{
     public static TreeMap GetCiCo() throws SQLException{
         try{
             cities = new TreeMap<>();
-            countries = new TreeMap<>();
             ds = DataSource.getInstance();
             conn = ds.getMDS().getConnection();
             prepstatement = conn.prepareStatement("SELECT city.cityId, city.city, country.countryId, country.country "
@@ -472,13 +469,14 @@ public class SQLHelper{
             results = prepstatement.executeQuery();
             if(results == null) return null;
             while(results.next()){
-                cities.put(results.getInt("cityId"), results.getString("city"));
-                countries.put(results.getInt("countryId"),results.getString("country"));                
+                Integer i = results.getInt("countryId");
+                String[] arr = new String[]{results.getString("city"),i.toString(),results.getString("country")};
+                cities.put(results.getInt("cityId"), arr);           
             }
-            TreeMap<Integer,TreeMap> arr = new TreeMap<>();
-            arr.put(0,cities);
-            arr.put(1,countries);
-            return arr;
+            TreeMap<Integer,String[]> arr = new TreeMap<>();
+            //arr.put(0,cities);
+            //arr.put(1,countries);
+            return cities;
         }
         catch(SQLException e){
             System.out.println(e.getMessage());
@@ -486,7 +484,7 @@ public class SQLHelper{
         }
         finally{
             cities = null;
-            countries = null;
+            //countries = null;
             if(results != null) results.close();
             if(prepstatement != null) prepstatement.close();
             if(conn != null) conn.close();
@@ -496,8 +494,7 @@ public class SQLHelper{
     // </editor-fold>
     
     // password method for login form
-    public static StringBuilder GetPass(String inputName) throws SQLException
-    {
+    public static StringBuilder GetPass(String inputName) throws SQLException{
         StringBuilder pass = new StringBuilder();
         try{
             ds = DataSource.getInstance();
